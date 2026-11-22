@@ -1094,6 +1094,11 @@ final class Api
                 $this->resetPassword();
             }
 
+            if ($path === '/api/auth/password/change') {
+                $this->expectMethod($method, 'POST');
+                $this->changePassword();
+            }
+
             if ($path === '/api/users/me') {
                 $auth = $this->requireAuth();
                 if ($method === 'GET') {
@@ -1339,21 +1344,36 @@ final class Api
     private function resendEmailVerification(): never
     {
         $this->requireCsrf();
-        $this->requireAllowedFields(['email']);
-        $email = $this->normalizedEmail($this->requiredString('email', 3, 254));
+        $this->requireAllowedFields(['email', 'identifier']);
+        $identifierField = array_key_exists('identifier', $this->body) ? 'identifier' : 'email';
+        $identifier = $this->requiredString($identifierField, 3, 254);
+
+        if (filter_var(trim($identifier), FILTER_VALIDATE_EMAIL) !== false) {
+            $email = $this->normalizedEmail($identifier);
+            $lookupField = 'email';
+        } elseif (preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9_.-]{2,49}\z/', trim($identifier))) {
+            $email = null;
+            $identifier = strtolower(trim($identifier));
+            $lookupField = 'username';
+        } else {
+            throw new ApiException('VALIDATION_ERROR', 'Enter a valid email address or username.', 422);
+        }
+
         $ip = $this->clientIp() ?? 'unknown';
         $this->rateLimiter->consume('email-verification:ip:' . $ip, 5, 3600);
-        $this->rateLimiter->consume('email-verification:email:' . $email, 3, 3600);
+        $this->rateLimiter->consume('email-verification:identifier:' . $ip . ':' . $identifier, 3, 3600);
 
         $statement = $this->db->prepare(
-            "SELECT id FROM users
-             WHERE email = :email
+            "SELECT id, email FROM users
+             WHERE {$lookupField} = :identifier
                AND email_verified = 0
                AND status IN ('pending_verification', 'active')
              LIMIT 1",
         );
-        $statement->execute(['email' => $email]);
-        $userId = $statement->fetchColumn();
+        $statement->execute(['identifier' => $lookupField === 'email' ? $email : $identifier]);
+        $pendingUser = $statement->fetch();
+        $userId = $pendingUser === false ? false : (int) $pendingUser['id'];
+        $email = $pendingUser === false ? null : (string) $pendingUser['email'];
 
         if ($userId !== false) {
             $token = self::randomToken();
@@ -1379,7 +1399,9 @@ final class Api
             });
 
             try {
-                $this->sendEmailVerification($email, $token);
+                if ($email !== null) {
+                    $this->sendEmailVerification($email, $token);
+                }
             } catch (Throwable $exception) {
                 error_log(sprintf(
                     'NEEN verification resend failed [request_id=%s] %s',
@@ -1425,7 +1447,7 @@ final class Api
         $this->rateLimiter->consume('login:account:' . $ip . ':' . $identifier, 10, 900);
 
         $statement = $this->db->prepare(
-            'SELECT id, password_hash, status, email_verified FROM users WHERE ' . $lookupField . ' = :identifier LIMIT 1',
+            'SELECT id, email, password_hash, status, email_verified FROM users WHERE ' . $lookupField . ' = :identifier LIMIT 1',
         );
         $statement->execute(['identifier' => $identifier]);
         $user = $statement->fetch();
@@ -1433,12 +1455,10 @@ final class Api
         $passwordMatches = $user === false
             ? password_verify($password, password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT))
             : password_verify($password, (string) $user['password_hash']);
-        if (
-            !$passwordMatches
-            || $user === false
-            || $user['status'] !== 'active'
-            || (int) $user['email_verified'] !== 1
-        ) {
+        if (!$passwordMatches || $user === false) {
+            throw new ApiException('AUTH_REQUIRED', 'Email or password is incorrect.', 401);
+        }
+        if (!in_array($user['status'], ['active', 'pending_verification'], true)) {
             throw new ApiException('AUTH_REQUIRED', 'Email or password is incorrect.', 401);
         }
 
@@ -1651,6 +1671,68 @@ final class Api
         $this->send(true, ['password_reset' => true]);
     }
 
+    private function changePassword(): never
+    {
+        $auth = $this->requireAuth();
+        $this->requireCsrf($auth);
+        $this->requireAllowedFields(['current_password', 'new_password']);
+
+        $currentPassword = $this->body['current_password'] ?? null;
+        if (!is_string($currentPassword) || $currentPassword === '' || strlen($currentPassword) > 1024) {
+            throw new ApiException('VALIDATION_ERROR', 'A valid current password is required.', 422);
+        }
+        $newPassword = $this->validatedPassword($this->body['new_password'] ?? null);
+
+        $statement = $this->db->prepare(
+            'SELECT password_hash FROM users WHERE id = :id AND status = \'active\' LIMIT 1',
+        );
+        $statement->execute(['id' => $auth['user_id']]);
+        $user = $statement->fetch();
+
+        if (
+            $user === false
+            || !password_verify($currentPassword, (string) $user['password_hash'])
+        ) {
+            throw new ApiException('AUTH_REQUIRED', 'The current password is incorrect.', 401);
+        }
+
+        if ($currentPassword === $newPassword) {
+            throw new ApiException('VALIDATION_ERROR', 'The new password must be different from the current password.', 422);
+        }
+
+        $now = $this->now();
+        $this->transaction(function () use ($auth, $newPassword, $now): void {
+            $statement = $this->db->prepare(
+                'UPDATE users SET password_hash = :password_hash, updated_at = :updated_at WHERE id = :id',
+            );
+            $statement->execute([
+                'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
+                'updated_at' => $now,
+                'id' => $auth['user_id'],
+            ]);
+
+            $statement = $this->db->prepare(
+                'UPDATE user_sessions SET revoked_at = :revoked_at
+                 WHERE user_id = :user_id AND id != :session_id AND revoked_at IS NULL',
+            );
+            $statement->execute([
+                'revoked_at' => $now,
+                'user_id' => $auth['user_id'],
+                'session_id' => $auth['session_id'],
+            ]);
+
+            $this->audit(
+                $auth['user_id'],
+                'password_changed',
+                'users',
+                $auth['user_id'],
+                ['other_sessions_revoked' => true],
+            );
+        });
+
+        $this->send(true, ['password_changed' => true]);
+    }
+
     private function updateProfile(int $userId): never
     {
         $allowed = ['display_name', 'full_name', 'avatar_url', 'country', 'bio', 'free_fire_id'];
@@ -1767,8 +1849,7 @@ final class Api
         $auth = $statement->fetch();
         if (
             $auth === false
-            || $auth['status'] !== 'active'
-            || (int) $auth['email_verified'] !== 1
+            || !in_array($auth['status'], ['active', 'pending_verification'], true)
         ) {
             return null;
         }
@@ -1948,7 +2029,7 @@ final class Api
     {
         $link = $this->accountLink('verify_token', $token);
         $message = "Welcome to NEEN.\n\n"
-            . "Verify your email address within 24 hours:\n"
+            . "Verify your email address using this confirmation link:\n"
             . $link . "\n\n"
             . "If you did not create this account, you can ignore this email.";
         EmailDelivery::send($email, 'Verify your NEEN email address', $message);

@@ -369,7 +369,7 @@ try {
     );
     assertTrue($expiredStatus === 422, 'Expired email verification tokens are rejected');
 
-    [$preVerificationLoginStatus] = request(
+    [$preVerificationLoginStatus, $preVerificationLoginResponse] = request(
         $baseUrl,
         '/api/auth/login',
         $cookies,
@@ -377,12 +377,13 @@ try {
         $csrf,
         'POST',
     );
-    assertTrue($preVerificationLoginStatus === 401, 'Unverified accounts cannot log in');
+    assertTrue($preVerificationLoginStatus === 200, 'Unverified accounts can log in normally');
+    $csrf = $preVerificationLoginResponse['data']['csrf_token'];
 
     $existingUnverified = new PDO('sqlite:' . $databasePath);
     $existingUnverifiedStatement = $existingUnverified->prepare(
         "INSERT INTO users (username, email, password_hash, status, email_verified, created_at, updated_at)
-         VALUES ('ExistingUnverified', 'existing-unverified@example.com', :password_hash, 'active', 0, :now, :now)",
+         VALUES ('existingunverified', 'existing-unverified@example.com', :password_hash, 'active', 0, :now, :now)",
     );
     $existingNow = gmdate('Y-m-d H:i:s');
     $existingUnverifiedStatement->execute([
@@ -391,15 +392,16 @@ try {
     ]);
     unset($existingUnverifiedStatement, $existingUnverified);
 
-    [$existingUnverifiedLoginStatus] = request(
+    [$existingUnverifiedLoginStatus, $existingUnverifiedLoginResponse] = request(
         $baseUrl,
         '/api/auth/login',
         $cookies,
-        ['identifier' => 'ExistingUnverified', 'password' => 'Correct-Horse-123'],
+        ['identifier' => 'existingunverified', 'password' => 'Correct-Horse-123'],
         $csrf,
         'POST',
     );
-    assertTrue($existingUnverifiedLoginStatus === 401, 'Existing active accounts without verified email cannot log in');
+    assertTrue($existingUnverifiedLoginStatus === 200, 'Active accounts without verified email can sign in normally');
+    $csrf = $existingUnverifiedLoginResponse['data']['csrf_token'];
     [$legacyResendStatus] = request(
         $baseUrl,
         '/api/auth/email/resend',
@@ -3474,6 +3476,39 @@ try {
     );
     assertTrue($status === 200, 'User can establish a session before password recovery');
     $csrf = $response['data']['csrf_token'];
+
+    [$status] = request(
+        $baseUrl,
+        '/api/auth/password/change',
+        $cookies,
+        ['current_password' => 'Incorrect-Current-Password', 'new_password' => 'Direct-New-Password-456'],
+        $csrf,
+        'POST',
+    );
+    assertTrue($status === 401, 'Direct password change rejects an incorrect current password');
+
+    [$status, $response] = request(
+        $baseUrl,
+        '/api/auth/password/change',
+        $cookies,
+        ['current_password' => 'Correct-Horse-123', 'new_password' => 'Direct-New-Password-456'],
+        $csrf,
+        'POST',
+    );
+    assertTrue($status === 200 && $response['data']['password_changed'] === true,
+        'Direct password change succeeds for an authenticated user');
+
+    [$status, $response] = request(
+        $baseUrl,
+        '/api/auth/password/change',
+        $cookies,
+        ['current_password' => 'Direct-New-Password-456', 'new_password' => 'Correct-Horse-123'],
+        $csrf,
+        'POST',
+    );
+    assertTrue($status === 200 && $response['data']['password_changed'] === true,
+        'Password can be restored after direct change testing');
+
     [$status, $response] = request(
         $baseUrl,
         '/api/auth/password/forgot',

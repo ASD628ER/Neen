@@ -1,6 +1,10 @@
 (() => {
   const message = document.querySelector("[data-account-message]");
   const authPanel = document.querySelector("[data-auth-panel]");
+  const verificationNotice = document.querySelector("[data-email-verification-notice]");
+  const verificationNoticeCopy = document.querySelector("[data-email-verification-copy]");
+  const resendVerificationButton = document.querySelector("[data-resend-verification]");
+  let pendingVerificationIdentifier = "";
   const profilePanel = document.querySelector("[data-profile-panel]");
   const tabs = document.querySelector("[data-auth-tabs]");
   const forms = {
@@ -9,6 +13,7 @@
     forgot: document.querySelector("#forgot-form"),
     reset: document.querySelector("#reset-form"),
     profile: document.querySelector("#profile-form"),
+    passwordChange: document.querySelector("#password-change-form"),
   };
   const attendanceButton = document.querySelector("[data-attendance-checkin]");
   const attendanceStatus = profilePanel.querySelector("[data-attendance-status]");
@@ -43,6 +48,12 @@
     message.textContent = text;
     message.classList.toggle("is-error", isError);
     message.classList.toggle("is-success", !isError && text !== "");
+  };
+
+  const showVerificationNotice = (identifier, text) => {
+    pendingVerificationIdentifier = identifier;
+    verificationNoticeCopy.textContent = text || "Verify your email within 48 hours before signing in.";
+    verificationNotice.hidden = false;
   };
 
   const api = async (path, method = "GET", data = null) => {
@@ -118,6 +129,7 @@
     Object.entries(forms).forEach(([name, form]) => {
       if (name !== "profile") form.hidden = name !== mode;
     });
+    if (mode !== "login") verificationNotice.hidden = true;
     tabs.hidden = mode === "forgot" || mode === "reset";
     tabs.querySelectorAll("[data-mode]").forEach((button) => {
       const selected = button.dataset.mode === mode;
@@ -195,7 +207,8 @@
     setAvatarImage(avatarPreview, profile.avatar_url);
     profilePanel.querySelector("[data-security-email-state]").textContent = profile.email_verified
       ? "Your email address is verified."
-      : "Your email is not verified. Use the verification link sent when you registered.";
+      : "Your email is not verified yet. Confirm it within 48 hours to keep your account fully verified.";
+    profilePanel.querySelector("[data-resend-profile-verification]").hidden = profile.email_verified;
     freeFireIdWrapper.hidden = !profile.free_fire_id;
     freeFireIdValue.textContent = profile.free_fire_id || "";
     avatarInput.value = profile.avatar_url || "";
@@ -708,6 +721,19 @@
       showMessage(error.message, true);
     }
   });
+  profilePanel.querySelector("[data-resend-profile-verification]").addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      await api("auth/email/resend", "POST", { email: currentProfile.email });
+      showMessage("A new confirmation link was sent. Please confirm it within 48 hours.");
+    } catch (error) {
+      showMessage(error.message, true);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
   profilePanel.querySelector("[data-password-reset]").addEventListener("click", async (event) => {
     const button = event.currentTarget;
     button.disabled = true;
@@ -720,6 +746,21 @@
       button.disabled = false;
     }
   });
+  resendVerificationButton.addEventListener("click", async () => {
+    resendVerificationButton.disabled = true;
+    try {
+      await api("auth/email/resend", "POST", {
+        identifier: pendingVerificationIdentifier,
+      });
+      showVerificationNotice(pendingVerificationIdentifier, "A new confirmation link was sent. Please confirm your account within 48 hours.");
+      showMessage("Confirmation email sent.");
+    } catch (error) {
+      showMessage(error.message, true);
+    } finally {
+      resendVerificationButton.disabled = false;
+    }
+  });
+
   document.querySelector("[data-show-forgot]").addEventListener("click", () => setMode("forgot"));
   document.querySelector("[data-show-login]").addEventListener("click", () => setMode("login"));
 
@@ -767,6 +808,9 @@
       forms.login.elements.identifier.value = data.email;
       forms.register.reset();
       setMode("login");
+      showVerificationNotice(data.email, result.verification_email_sent
+        ? "A confirmation link was sent to your email. Confirm it within 48 hours."
+        : "Your account was created, but the confirmation email could not be sent. Resend it below.");
       window.setTimeout(scrollAccountPageToTop, 500);
       showMessage(result.email_verification_required
         ? (result.verification_email_sent
@@ -806,6 +850,22 @@
       setMode("login");
       await requestCsrfToken();
       showMessage("Password updated. Sign in with your new password.");
+    } catch (error) {
+      showMessage(error.message, true);
+    }
+  });
+
+  forms.passwordChange.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!forms.passwordChange.reportValidity()) return;
+    const data = Object.fromEntries(new FormData(forms.passwordChange));
+    try {
+      await api("auth/password/change", "POST", {
+        current_password: data.current_password,
+        new_password: data.new_password,
+      });
+      forms.passwordChange.reset();
+      showMessage("Password changed. Other signed-in devices have been signed out.");
     } catch (error) {
       showMessage(error.message, true);
     }

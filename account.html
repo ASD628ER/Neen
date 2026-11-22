@@ -40,6 +40,11 @@
               <button class="account-tab" type="button" data-mode="register" aria-pressed="false">Create account</button>
             </div>
 
+            <div class="account-copy" data-email-verification-notice hidden>
+              <p data-email-verification-copy>Please verify your email within 48 hours before signing in.</p>
+              <button class="button button-primary account-submit" type="button" data-resend-verification>Resend confirmation link</button>
+            </div>
+
             <form class="account-form" id="login-form" novalidate>
               <h2>Welcome back.</h2>
               <label class="account-field">
@@ -244,9 +249,22 @@
               </div>
               <div class="profile-security-card">
                 <div><strong>Email verification</strong><p data-security-email-state>Your verification status will appear here.</p></div>
-                <div><strong>Password</strong><p>Reset your password using the secure link sent to your account email.</p></div>
+                <button type="button" class="profile-secondary-button" data-resend-profile-verification hidden>Resend confirmation link</button>
+                <div><strong>Password</strong><p>Change it securely while signed in, or use email recovery if you forgot it.</p></div>
                 <button type="button" class="profile-secondary-button" data-password-reset>Send password reset link</button>
               </div>
+              <form class="account-form profile-edit-form" id="password-change-form" novalidate>
+                <label class="account-field">
+                  <span>Current password</span>
+                  <input name="current_password" type="password" autocomplete="current-password" maxlength="1024" required />
+                </label>
+                <label class="account-field">
+                  <span>New password</span>
+                  <input name="new_password" type="password" autocomplete="new-password" minlength="12" maxlength="72" required />
+                  <small>Use at least 12 characters.</small>
+                </label>
+                <button class="button button-primary account-submit" type="submit">Change password</button>
+              </form>
               <form class="account-form profile-edit-form" id="profile-form" novalidate>
                 <div class="account-field profile-avatar-field">
                   <span>Choose an avatar</span>
