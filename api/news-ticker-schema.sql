@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS news_ticker_messages (
     status ENUM('Pending', 'Approved', 'Rejected', 'Deleted') NOT NULL DEFAULT 'Pending',
     display_active TINYINT(1) NOT NULL DEFAULT 0,
     ip_address VARCHAR(45) NULL,
+    source ENUM('Visitor', 'Owner') NOT NULL DEFAULT 'Visitor',
     approved_by BIGINT UNSIGNED NULL,
     approved_at DATETIME NULL,
     created_at DATETIME NOT NULL,

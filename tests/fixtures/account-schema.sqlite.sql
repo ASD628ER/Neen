@@ -551,6 +551,7 @@ CREATE TABLE news_ticker_messages (
     status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Deleted')),
     display_active INTEGER NOT NULL DEFAULT 0 CHECK (display_active IN (0, 1)),
     ip_address TEXT,
+    source TEXT NOT NULL DEFAULT 'Visitor' CHECK (source IN ('Visitor', 'Owner')),
     approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     approved_at TEXT,
     created_at TEXT NOT NULL,

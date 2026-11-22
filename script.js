@@ -2029,7 +2029,15 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
   const renderTrack = (messages) => {
     track.replaceChildren();
     if (messages.length === 0) {
-      viewport.hidden = true;
+      viewport.hidden = false;
+      const fallback = [{ sender_name: "NEEN", message: "Welcome to the NEEN Gaming Arena!", source: "System" }];
+      for (let copy = 0; copy < 2; copy += 1) {
+        const group = document.createElement("div");
+        group.className = "neen-news-ticker-group";
+        group.setAttribute("aria-hidden", copy === 1 ? "true" : "false");
+        fallback.forEach((item) => group.append(makeItem(item)));
+        track.append(group);
+      }
       return;
     }
     viewport.hidden = false;
@@ -2057,12 +2065,22 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
       section.style.setProperty("--neen-news-glow", settings.colors.glow);
       section.style.setProperty("--neen-news-speed", `${settings.speed_seconds}s`);
       if (settings.enabled) {
+        section.hidden = false;
         renderTrack(data.messages);
       } else {
-        viewport.hidden = true;
+        section.hidden = true;
       }
-    } catch {
-      section.hidden = true;
+    } catch (error) {
+      section.hidden = false;
+      viewport.hidden = false;
+      track.replaceChildren();
+      const group = document.createElement("div");
+      group.className = "neen-news-ticker-group";
+      const item = document.createElement("span");
+      item.className = "neen-news-ticker-item";
+      item.textContent = "NEEN NEWS: News ticker is temporarily unavailable.";
+      group.append(item);
+      track.append(group, group.cloneNode(true));
     }
   };
 

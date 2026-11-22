@@ -213,7 +213,17 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
             </div>
 
             <article class="admin-panel">
-              <div class="admin-panel-heading"><div><p class="admin-eyebrow">MESSAGE QUEUE</p><h3>Visitor submissions</h3></div><button type="button" class="admin-secondary-button" data-owner-news-refresh>Refresh</button></div>
+              <div class="admin-panel-heading"><div><p class="admin-eyebrow">PUBLISH OWNER MESSAGE</p><h3>Publish Owner Message</h3></div></div>
+              <form class="owner-news-publish" data-owner-news-publish>
+                <label><span>Sender name</span><input name="sender_name" type="text" minlength="2" maxlength="40" required value="NEEN" /></label>
+                <label><span>Message</span><textarea name="message" minlength="3" maxlength="280" rows="2" required></textarea></label>
+                <div class="owner-news-publish-preview" data-owner-news-publish-preview><strong>NEEN:</strong><span>Write a message to preview it.</span></div>
+                <button class="admin-primary-button" type="submit">Publish directly</button>
+              </form>
+            </article>
+
+            <article class="admin-panel">
+              <div class="admin-panel-heading"><div><p class="admin-eyebrow">MESSAGE QUEUE</p><h3>Visitor and owner messages</h3></div><button type="button" class="admin-secondary-button" data-owner-news-refresh>Refresh</button></div>
               <div class="owner-news-messages" data-owner-news-messages aria-live="polite"><p class="admin-state">Loading news messages…</p></div>
             </article>
           </section>

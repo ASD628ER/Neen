@@ -89,6 +89,16 @@ try {
     if (!in_array('earned_coin_balance', $columns, true)) {
         $db->exec('ALTER TABLE wallets ADD COLUMN earned_coin_balance BIGINT NOT NULL DEFAULT 0 AFTER purchased_coin_balance');
     }
+
+    $tickerColumns = $db->query(
+        "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'news_ticker_messages'",
+    )->fetchAll(PDO::FETCH_COLUMN);
+    if ($tickerColumns !== [] && !in_array('source', $tickerColumns, true)) {
+        $db->exec("ALTER TABLE news_ticker_messages
+            ADD COLUMN source ENUM('Visitor', 'Owner') NOT NULL DEFAULT 'Visitor' AFTER ip_address");
+    }
+
     $diamondColumns = $db->query(
         "SELECT COLUMN_NAME FROM information_schema.COLUMNS
          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'diamond_recharge_orders'",

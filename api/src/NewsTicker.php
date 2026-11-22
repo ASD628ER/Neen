@@ -36,7 +36,7 @@ final class NewsTicker
         $messages = [];
         if ((bool) $settings['enabled']) {
             $statement = $this->db->prepare(
-                "SELECT id, sender_name, message
+                "SELECT id, sender_name, message, source
                  FROM news_ticker_messages
                  WHERE status = 'Approved' AND display_active = 1
                  ORDER BY approved_at DESC, id DESC",
@@ -47,6 +47,7 @@ final class NewsTicker
                     'id' => (int) $row['id'],
                     'sender_name' => (string) $row['sender_name'],
                     'message' => (string) $row['message'],
+                    'source' => (string) $row['source'],
                 ];
             }
         }
@@ -61,8 +62,8 @@ final class NewsTicker
 
         $statement = $this->db->prepare(
             "INSERT INTO news_ticker_messages
-                (sender_name, message, status, display_active, ip_address, created_at, updated_at)
-             VALUES (:sender_name, :message, 'Pending', 0, :ip_address, :created_at, :updated_at)",
+                (sender_name, message, status, display_active, ip_address, source, created_at, updated_at)
+             VALUES (:sender_name, :message, 'Pending', 0, :ip_address, 'Visitor', :created_at, :updated_at)",
         );
         $statement->execute([
             'sender_name' => $senderName,
@@ -83,7 +84,7 @@ final class NewsTicker
     {
         $statement = $this->db->query(
             'SELECT id, sender_name, message, status, display_active,
-                    ip_address, created_at, approved_at, updated_at
+                    ip_address, source, created_at, approved_at, updated_at
              FROM news_ticker_messages
              ORDER BY
                 CASE status WHEN \'Pending\' THEN 0 WHEN \'Approved\' THEN 1 ELSE 2 END,
@@ -97,6 +98,27 @@ final class NewsTicker
         unset($message);
 
         return ['settings' => $this->settings(), 'messages' => $messages, 'themes' => self::THEMES];
+    }
+
+    public function publishOwnerMessage(string $senderName, string $message, int $ownerUserId): array
+    {
+        $senderName = $this->cleanText($senderName, 2, 40, 'Sender name');
+        $message = $this->cleanText($message, 3, 280, 'Message');
+        $now = gmdate('Y-m-d H:i:s');
+        $statement = $this->db->prepare(
+            "INSERT INTO news_ticker_messages
+                (sender_name, message, status, display_active, source, approved_by, approved_at, created_at, updated_at)
+             VALUES (:sender_name, :message, 'Approved', 1, 'Owner', :approved_by, :approved_at, :created_at, :updated_at)",
+        );
+        $statement->execute([
+            'sender_name' => $senderName,
+            'message' => $message,
+            'approved_by' => $ownerUserId,
+            'approved_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        return $this->message((int) $this->db->lastInsertId());
     }
 
     public function updateSettings(array $body): array
@@ -258,7 +280,7 @@ final class NewsTicker
     private function message(int $messageId): array
     {
         $statement = $this->db->prepare(
-            'SELECT id, sender_name, message, status, display_active, ip_address, created_at, approved_at, updated_at
+            'SELECT id, sender_name, message, status, display_active, ip_address, source, created_at, approved_at, updated_at
              FROM news_ticker_messages WHERE id = :id LIMIT 1',
         );
         $statement->execute(['id' => $messageId]);

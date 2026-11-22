@@ -24,6 +24,10 @@ $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 $db->exec(file_get_contents(__DIR__ . '/fixtures/account-schema.sqlite.sql') ?: '');
 $ticker = new NewsTicker($db);
 
+$db->exec("INSERT INTO users (username, email, password_hash, status, email_verified, created_at, updated_at)
+    VALUES ('owner', 'owner@example.com', 'test-hash', 'active', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+$ownerId = (int) $db->lastInsertId();
+
 $submission = $ticker->submit('SNOOP', 'Welcome to NEEN Gaming Arena!', '127.0.0.1');
 tickerAssert($submission['status'] === 'Pending', 'Visitor submission is created with Pending status');
 
@@ -84,6 +88,20 @@ tickerAssert(
     $edited['sender_name'] === 'NEEN'
         && $edited['message'] === 'Arena update: new challenges are live.',
     'Owner can edit sender name and message before or after approval',
+);
+
+$ownerMessage = $ticker->publishOwnerMessage('NEEN', 'Owner announcement: Arena schedule updated.', $ownerId);
+tickerAssert(
+    $ownerMessage['status'] === 'Approved'
+        && $ownerMessage['display_active'] === true
+        && $ownerMessage['source'] === 'Owner',
+    'Owner message publishes directly and is marked as Owner',
+);
+$afterOwnerPublish = $ticker->publicData();
+tickerAssert(
+    count($afterOwnerPublish['messages']) >= 1
+        && $ownerMessage['id'] === (int) $afterOwnerPublish['messages'][0]['id'],
+    'Owner message appears publicly immediately',
 );
 
 $rejectedSubmission = $ticker->submit('SPAMMER', 'Rejected for community rules', '127.0.0.1');

@@ -81,6 +81,27 @@ final class Api
                 $this->send(true, ['settings' => $settings]);
             }
 
+            if ($path === '/api/owner/news-ticker/messages/publish') {
+                $auth = $this->requireAuth();
+                $this->requireOwner($auth['user_id']);
+                $this->expectMethod($method, 'POST');
+                $this->requireCsrf($auth);
+                $this->requireAllowedFields(['sender_name', 'message']);
+                $senderName = $this->body['sender_name'] ?? null;
+                $message = $this->body['message'] ?? null;
+                if (!is_string($senderName) || !is_string($message)) {
+                    throw new ApiException('VALIDATION_ERROR', 'Sender name and message are required.', 422);
+                }
+                $ticker = new NewsTicker($this->db);
+                $published = $this->transaction(fn (): array => $ticker->publishOwnerMessage(
+                    $senderName,
+                    $message,
+                    $auth['user_id'],
+                ));
+                $this->audit($auth['user_id'], 'news_ticker_owner_message_published', 'news_ticker_message', $published['id']);
+                $this->send(true, ['message' => $published], [], 201);
+            }
+
             if (preg_match('#\A/api/owner/news-ticker/messages/([1-9][0-9]*)\z#', $path, $match) === 1) {
                 $auth = $this->requireAuth();
                 $this->requireOwner($auth['user_id']);

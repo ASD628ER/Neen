@@ -1193,7 +1193,7 @@
       card.dataset.status = item.status;
 
       const heading = make("div", "owner-news-message-heading");
-      heading.append(make("strong", "", `#${item.id}`));
+      heading.append(make("strong", "", `#${item.id}${item.source === "Owner" ? " · Owner Message" : " · Visitor"}`));
       const status = make("span", `owner-news-status is-${item.status.toLowerCase()}`, item.status);
       if (item.status === "Approved") status.textContent += item.display_active ? " · Visible" : " · Paused";
       heading.append(status);
@@ -1299,7 +1299,10 @@
       renderNewsPreview();
       renderNewsMessages();
     } catch (error) {
-      toast(error instanceof Error ? error.message : t("failed"), true);
+      const message = error instanceof Error ? error.message : t("failed");
+      const container = document.querySelector("[data-owner-news-messages]");
+      if (container instanceof HTMLElement) showState(container, `Could not load news messages: ${message}`, true);
+      toast(message, true);
     }
   };
 
@@ -1330,7 +1333,48 @@
     });
   }
 
-  document.querySelector("[data-owner-news-refresh]")?.addEventListener("click", loadNewsTicker);
+  const publishForm = document.querySelector("[data-owner-news-publish]");
+  if (publishForm instanceof HTMLFormElement) {
+    const preview = publishForm.querySelector("[data-owner-news-publish-preview]");
+    const updatePublishPreview = () => {
+      if (!(preview instanceof HTMLElement)) return;
+      const sender = publishForm.elements.namedItem("sender_name");
+      const message = publishForm.elements.namedItem("message");
+      const senderValue = sender instanceof HTMLInputElement ? sender.value.trim() : "NEEN";
+      const messageValue = message instanceof HTMLTextAreaElement ? message.value.trim() : "";
+      preview.replaceChildren();
+      preview.append(make("strong", "", `${senderValue || "NEEN"}:`), make("span", "", messageValue || "Write a message to preview it."));
+    };
+    publishForm.addEventListener("input", updatePublishPreview);
+  }
+
+  const publishFormSubmit = publishForm;
+  if (publishFormSubmit instanceof HTMLFormElement) {
+    publishFormSubmit.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!publishFormSubmit.reportValidity()) return;
+      const values = new FormData(publishFormSubmit);
+      try {
+        await mutate("/api/owner/news-ticker/messages/publish", "POST", {
+          sender_name: String(values.get("sender_name") ?? "NEEN").trim(),
+          message: String(values.get("message") ?? "").trim(),
+        });
+        publishFormSubmit.reset();
+        const preview = publishFormSubmit.querySelector("[data-owner-news-publish-preview]");
+        if (preview instanceof HTMLElement) preview.replaceChildren(make("strong", "", "NEEN:"), make("span", "", "Write a message to preview it."));
+        toast("Owner message published directly.");
+        await loadNewsTicker();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : t("failed"), true);
+      }
+    });
+  }
+
+  document.querySelector("[data-owner-news-refresh]")?.addEventListener("click", async () => {
+    const container = document.querySelector("[data-owner-news-messages]");
+    if (container instanceof HTMLElement) showState(container, "Loading news messages…");
+    await loadNewsTicker();
+  });
 
   const refreshSelected = async () => {
     if (!state.selectedUser) return;
