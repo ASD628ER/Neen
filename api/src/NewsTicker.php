@@ -74,18 +74,26 @@ final class NewsTicker
         $message = $this->cleanText($message, 3, 280, 'Message');
         $now = gmdate('Y-m-d H:i:s');
 
-        $statement = $this->db->prepare(
-            "INSERT INTO news_ticker_messages
-                (sender_name, message, status, display_active, ip_address, source, created_at, updated_at)
-             VALUES (:sender_name, :message, 'Pending', 0, :ip_address, 'Visitor', :created_at, :updated_at)",
-        );
-        $statement->execute([
+        try {
+            $statement = $this->db->prepare(
+                "INSERT INTO news_ticker_messages
+                    (sender_name, message, status, display_active, ip_address, source, created_at, updated_at)
+                 VALUES (:sender_name, :message, 'Pending', 0, :ip_address, 'Visitor', :created_at, :updated_at)",
+            );
+            $statement->execute([
             'sender_name' => $senderName,
             'message' => $message,
             'ip_address' => $ipAddress,
             'created_at' => $now,
             'updated_at' => $now,
-        ]);
+            ]);
+        } catch (PDOException $exception) {
+            throw new ApiException(
+                'NEWS_TICKER_NOT_MIGRATED',
+                'News Ticker is not available yet. The database migration must be applied.',
+                503,
+            );
+        }
 
         return [
             'id' => (int) $this->db->lastInsertId(),
@@ -96,7 +104,9 @@ final class NewsTicker
 
     public function ownerData(): array
     {
-        $statement = $this->db->query(
+        try {
+            $settings = $this->settings();
+            $statement = $this->db->query(
             'SELECT id, sender_name, message, status, display_active,
                     ip_address, source, created_at, approved_at, updated_at
              FROM news_ticker_messages
@@ -111,7 +121,21 @@ final class NewsTicker
         }
         unset($message);
 
-        return ['settings' => $this->settings(), 'messages' => $messages, 'themes' => self::THEMES];
+            return ['settings' => $settings, 'messages' => $messages, 'themes' => self::THEMES, 'migration_ready' => true];
+        } catch (PDOException $exception) {
+            return [
+                'settings' => [
+                    'enabled' => true,
+                    'theme' => 'pink_indigo',
+                    'speed_seconds' => 55,
+                    'colors' => self::THEMES['pink_indigo'],
+                ],
+                'messages' => [],
+                'themes' => self::THEMES,
+                'migration_ready' => false,
+                'error' => 'News Ticker tables are not available. Apply php api/migrate.php.',
+            ];
+        }
     }
 
     public function publishOwnerMessage(string $senderName, string $message, int $ownerUserId): array
@@ -119,19 +143,27 @@ final class NewsTicker
         $senderName = $this->cleanText($senderName, 2, 40, 'Sender name');
         $message = $this->cleanText($message, 3, 280, 'Message');
         $now = gmdate('Y-m-d H:i:s');
-        $statement = $this->db->prepare(
-            "INSERT INTO news_ticker_messages
-                (sender_name, message, status, display_active, source, approved_by, approved_at, created_at, updated_at)
-             VALUES (:sender_name, :message, 'Approved', 1, 'Owner', :approved_by, :approved_at, :created_at, :updated_at)",
-        );
-        $statement->execute([
+        try {
+            $statement = $this->db->prepare(
+                "INSERT INTO news_ticker_messages
+                    (sender_name, message, status, display_active, source, approved_by, approved_at, created_at, updated_at)
+                 VALUES (:sender_name, :message, 'Approved', 1, 'Owner', :approved_by, :approved_at, :created_at, :updated_at)",
+            );
+            $statement->execute([
             'sender_name' => $senderName,
             'message' => $message,
             'approved_by' => $ownerUserId,
             'approved_at' => $now,
             'created_at' => $now,
             'updated_at' => $now,
-        ]);
+            ]);
+        } catch (PDOException $exception) {
+            throw new ApiException(
+                'NEWS_TICKER_NOT_MIGRATED',
+                'News Ticker is not available yet. The database migration must be applied.',
+                503,
+            );
+        }
         return $this->message((int) $this->db->lastInsertId());
     }
 

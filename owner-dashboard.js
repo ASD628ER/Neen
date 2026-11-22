@@ -1263,6 +1263,13 @@
     if (!(form instanceof HTMLFormElement) || !(themesContainer instanceof HTMLElement)) return;
     try {
       state.newsData = await apiRequest("/api/owner/news-ticker");
+      if (state.newsData.migration_ready === false) {
+        const container = document.querySelector("[data-owner-news-messages]");
+        if (container instanceof HTMLElement) {
+          showState(container, state.newsData.error || "News Ticker database migration is required.", true);
+        }
+        return;
+      }
       const settings = state.newsData.settings;
       const enabled = form.elements.namedItem("enabled");
       if (enabled instanceof HTMLInputElement) enabled.checked = settings.enabled;
