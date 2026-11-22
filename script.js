@@ -1267,6 +1267,7 @@ if (menuToggle && navigation) {
 
 const homeHero = document.querySelector(".home-hero");
 const homeHeroArt = homeHero?.querySelector(".hero-art");
+const arcadeSpotlight = document.querySelector(".home-page .arcade-spotlight");
 const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -1317,6 +1318,24 @@ if (homeHero instanceof HTMLElement && homeHeroArt instanceof HTMLElement && fin
   }, { passive: true });
 
   homeHero.addEventListener("pointerleave", resetHeroTilt);
+}
+
+if (arcadeSpotlight instanceof HTMLElement && finePointer.matches && !reducedMotion.matches) {
+  const resetSpotlightTilt = () => {
+    arcadeSpotlight.style.removeProperty("--spotlight-tilt-x");
+    arcadeSpotlight.style.removeProperty("--spotlight-tilt-y");
+  };
+
+  arcadeSpotlight.addEventListener("pointermove", (event) => {
+    const bounds = arcadeSpotlight.getBoundingClientRect();
+    const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
+
+    arcadeSpotlight.style.setProperty("--spotlight-tilt-x", `${vertical * -3}deg`);
+    arcadeSpotlight.style.setProperty("--spotlight-tilt-y", `${horizontal * 3}deg`);
+  }, { passive: true });
+
+  arcadeSpotlight.addEventListener("pointerleave", resetSpotlightTilt);
 }
 
 const revealTargets = document.querySelectorAll(

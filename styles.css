@@ -9236,19 +9236,63 @@ html[dir="rtl"] .back-to-top {
   min-height: clamp(430px, 44vw, 560px);
   padding: clamp(30px, 6vw, 76px);
   overflow: hidden;
-  border: 0;
-  border-radius: 22px;
+  border: 1px solid rgb(241 189 255 / 28%);
+  border-radius: 26px;
   background: #100c1b;
   isolation: isolate;
+  transform: perspective(1400px)
+    rotateX(var(--spotlight-tilt-x, 0deg))
+    rotateY(var(--spotlight-tilt-y, 0deg))
+    translateY(var(--spotlight-lift, 0px));
+  transform-style: preserve-3d;
+  box-shadow:
+    0 34px 70px rgb(15 6 29 / 40%),
+    0 14px 30px rgb(152 55 193 / 16%),
+    0 0 38px rgb(255 79 163 / 10%),
+    inset 0 1px 0 rgb(255 255 255 / 16%);
+  transition:
+    transform 420ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    box-shadow 420ms ease,
+    border-color 420ms ease;
+  will-change: transform;
 }
 
 .home-page .arcade-spotlight::before {
-  width: 0;
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 92% 6%, rgb(200 118 255 / 16%), transparent 35%),
+    radial-gradient(ellipse at 10% 100%, rgb(255 79 163 / 12%), transparent 38%);
+  content: "";
+  pointer-events: none;
 }
 
 .home-page .arcade-spotlight-copy {
   max-width: 700px;
-  text-shadow: 0 2px 18px rgb(0 0 0 / 42%);
+  text-shadow: 0 2px 18px rgb(0 0 0 / 48%);
+  transform: translateZ(30px);
+}
+
+.home-page .arcade-spotlight h3 {
+  width: fit-content;
+  color: #fff;
+  background: linear-gradient(105deg, #fff 5%, #ffc2e4 47%, #cba7ff 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 5px 20px rgb(193 89 255 / 24%));
+  text-shadow: none;
+}
+
+.home-page .arcade-kicker {
+  color: #ffd3ed;
+}
+
+.home-page .arcade-spotlight-copy > p:not(.arcade-kicker) {
+  color: rgb(255 246 253 / 88%);
 }
 
 .home-page .arcade-spotlight-art {
@@ -9269,8 +9313,8 @@ html[dir="rtl"] .back-to-top {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgb(8 7 15 / 88%) 0%, rgb(8 7 15 / 67%) 42%, rgb(8 7 15 / 12%) 100%),
-    linear-gradient(0deg, rgb(8 7 15 / 55%), transparent 58%);
+    linear-gradient(90deg, rgb(8 7 15 / 78%) 0%, rgb(8 7 15 / 56%) 43%, rgb(8 7 15 / 7%) 100%),
+    linear-gradient(0deg, rgb(8 7 15 / 43%), transparent 58%);
   content: "";
   pointer-events: none;
 }
@@ -9282,6 +9326,49 @@ html[dir="rtl"] .back-to-top {
   object-fit: cover;
   object-position: center;
   filter: none;
+}
+
+.home-page .island-zone-list li {
+  border-color: rgb(255 255 255 / 23%);
+  border-radius: 999px;
+  background: rgb(15 8 28 / 58%);
+  color: #fff2fb;
+  backdrop-filter: blur(8px);
+}
+
+.home-page .arcade-spotlight .button-primary {
+  border: 1px solid rgb(255 255 255 / 44%);
+  background: linear-gradient(135deg, #f254a5 0%, #bd4ee8 58%, #805be8 100%);
+  box-shadow:
+    0 9px 0 #703397,
+    0 15px 28px rgb(190 63 190 / 35%),
+    inset 0 1px 0 rgb(255 255 255 / 48%);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.home-page .arcade-spotlight .button-primary:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.08);
+  box-shadow:
+    0 12px 0 #703397,
+    0 20px 34px rgb(190 63 190 / 42%),
+    inset 0 1px 0 rgb(255 255 255 / 52%);
+}
+
+.home-page .arcade-spotlight .button-primary:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 4px 0 #703397,
+    0 8px 18px rgb(190 63 190 / 30%),
+    inset 0 1px 0 rgb(255 255 255 / 42%);
+}
+
+.home-page .arcade-spotlight .arcade-reward-badge {
+  border-color: rgb(255 213 102 / 48%);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgb(255 216 121 / 19%), rgb(255 177 68 / 11%));
+  color: #ffe4a0;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 13%), 0 5px 18px rgb(255 189 75 / 9%);
 }
 
 .home-page .arcade-spotlight-art figcaption {
@@ -9298,11 +9385,38 @@ html[dir="rtl"] .back-to-top {
   z-index: 1;
   color: rgb(255 255 255 / 65%);
   text-shadow: 0 2px 10px rgb(0 0 0 / 55%);
+  transform: translateZ(18px);
+}
+
+.reveal-ready .arcade-spotlight {
+  transform: perspective(1400px)
+    rotateX(var(--spotlight-tilt-x, 0deg))
+    rotateY(var(--spotlight-tilt-y, 0deg))
+    translateY(calc(var(--spotlight-lift, 0px) + 24px));
+}
+
+.reveal-ready .arcade-spotlight.is-visible {
+  transform: perspective(1400px)
+    rotateX(var(--spotlight-tilt-x, 0deg))
+    rotateY(var(--spotlight-tilt-y, 0deg))
+    translateY(var(--spotlight-lift, 0px));
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .home-page .arcade-spotlight:hover {
+    --spotlight-lift: -8px;
+    border-color: rgb(242 153 255 / 52%);
+    box-shadow:
+      0 44px 88px rgb(15 6 29 / 48%),
+      0 18px 38px rgb(152 55 193 / 23%),
+      0 0 52px rgb(255 79 163 / 17%),
+      inset 0 1px 0 rgb(255 255 255 / 22%);
+  }
 }
 
 @media (max-width: 700px) {
   .home-page .arcade-spotlight {
-    min-height: 510px;
+    min-height: 490px;
     padding: 30px 20px 54px;
   }
 
@@ -9312,8 +9426,8 @@ html[dir="rtl"] .back-to-top {
 
   .home-page .arcade-spotlight-art::after {
     background:
-      linear-gradient(180deg, rgb(8 7 15 / 52%) 0%, rgb(8 7 15 / 73%) 48%, rgb(8 7 15 / 90%) 100%),
-      linear-gradient(90deg, rgb(8 7 15 / 24%), transparent 100%);
+      linear-gradient(180deg, rgb(8 7 15 / 34%) 0%, rgb(8 7 15 / 65%) 44%, rgb(8 7 15 / 84%) 100%),
+      linear-gradient(90deg, rgb(8 7 15 / 20%), transparent 100%);
   }
 
   .home-page .arcade-spotlight-art img {
@@ -9323,5 +9437,12 @@ html[dir="rtl"] .back-to-top {
   .home-page .arcade-spotlight-art figcaption {
     right: 18px;
     bottom: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page .arcade-spotlight,
+  .home-page .arcade-spotlight .button-primary {
+    transition-duration: 0.01ms;
   }
 }
