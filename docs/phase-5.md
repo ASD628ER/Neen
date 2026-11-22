@@ -6,7 +6,7 @@ Memory Match is a playable account-backed game integrated with the existing PHP/
 
 The approved source is [`assets/hero-loot/Memory Match pic/`](../assets/hero-loot/Memory%20Match%20pic/). Inspection found eight JPEG images; all eight are used, each verified as a valid 1600 × 738 image. The originals are served in place and have not been cropped, converted, or overwritten. [`assets/hero-loot/memory-match-images.json`](../assets/hero-loot/memory-match-images.json) maps stable image IDs, accessible descriptions, and original paths.
 
-The manifests provide the initial library and are imported into the `game_images` table on first use. Thereafter the Owner Dashboard's **Game Images** section manages the persistent library: owners can add or replace WebP, PNG, and JPG files, reorder images, and hide or show them to players. Uploads are limited to 5 MB and 8000 × 8000 pixels; Memory Match supports up to 12 images. Existing files and stable image IDs are preserved, including IDs used by saved sessions. The browser presents the full original image inside a square card with `object-fit: contain`, so the wide source art is letterboxed rather than stretched or cropped.
+The eight manifest images remain the fixed Memory Match image set. Owners can replace each image from its existing slot in the Owner Dashboard's **Site Images & Media Manager**; resetting a slot restores its manifest image. Replacements use the existing `site_settings` media flow and `uploads/site/` storage, so no separate game-image library or database table is introduced. Image order, count, stable IDs, and saved-session behavior remain unchanged. The browser presents the full original image inside a square card with `object-fit: contain`, so the wide source art is letterboxed rather than stretched or cropped.
 
 ## Gameplay and server authority
 
@@ -23,7 +23,7 @@ The idempotent installer now also applies [`api/games-schema.sql`](../api/games-
 - `game_sessions` — owner, attempt type, state, move/pair counts, idempotency key, activity, and expiry/completion timestamps.
 - `memory_match_states` — server-only shuffled board, matched card identities, open card identities, and mismatch timer.
 
-The schema installer is `php api/migrate.php`; it requires the existing configured MySQL database and the same environment variables in [`phase-3.md`](phase-3.md). It also creates the `game_images` table used by the Owner Dashboard; uploaded files are stored under `uploads/game-images/`. Existing owner-role protection and audit logging apply, and no game-specific permissions are added.
+The schema installer is `php api/migrate.php`; it requires the existing configured MySQL database and the same environment variables in [`phase-3.md`](phase-3.md). The existing Site Media manager controls image replacements through `site_settings`; no game-specific image table or permissions are added. Existing owner-role protection and audit logging apply.
 
 ## API
 

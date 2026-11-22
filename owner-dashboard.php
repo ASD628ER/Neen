@@ -8,7 +8,7 @@ require_once __DIR__ . '/api/src/AdminPage.php';
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: same-origin');
-header("Content-Security-Policy: default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+header("Content-Security-Policy: default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
 
 try {
     $owner = AdminPage::authorize(Database::connect(), true);
@@ -75,8 +75,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
           <button type="button" class="admin-nav-item" data-section="users"><span class="admin-nav-index">02</span><span data-i18n="playersWallet">Players &amp; Wallet</span></button>
           <button type="button" class="admin-nav-item" data-section="wallet"><span class="admin-nav-index">00</span><span data-i18n="allSections">All Sections</span></button>
           <button type="button" class="admin-nav-item" data-section="modules"><span class="admin-nav-index">03</span><span data-i18n="gamesRewardsNav">Games &amp; Rewards</span></button>
-          <button type="button" class="admin-nav-item" data-section="game-images"><span class="admin-nav-index">04</span><span data-i18n="gameImagesNav">Game Images</span></button>
-          <button type="button" class="admin-nav-item" data-section="activity"><span class="admin-nav-index">05</span><span data-i18n="siteAudit">Site Settings &amp; Audit Log</span></button>
+          <button type="button" class="admin-nav-item" data-section="activity"><span class="admin-nav-index">04</span><span data-i18n="siteAudit">Site Settings &amp; Audit Log</span></button>
         </nav>
         <div class="admin-sidebar-footer"><span class="admin-live-dot" aria-hidden="true"></span><span data-i18n="ownerVerified">OWNER ROLE SERVER-VERIFIED</span></div>
       </aside>
@@ -179,41 +178,6 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
             </div>
           </section>
 
-          <section class="admin-section" data-panel="game-images" aria-labelledby="game-images-title" hidden>
-            <div class="admin-section-heading">
-              <div><p class="admin-eyebrow"><span data-i18n="gameImagesNav">GAME IMAGES</span> / 04</p><h2 id="game-images-title" data-i18n="gameImagesTitle">Game Images</h2></div>
-              <p data-i18n="gameImagesDescription">Manage the image libraries used by Memory Match and Picture Puzzle. Changes are available to players from the live game catalog.</p>
-            </div>
-            <article class="admin-panel owner-game-images-panel">
-              <div class="owner-game-image-toolbar">
-                <div class="owner-game-image-tabs" role="tablist" aria-label="Game image collections" data-i18n-aria-label="gameImageTabsLabel">
-                  <button type="button" class="owner-game-image-tab is-active" role="tab" id="memory-match-images-tab" aria-controls="game-images-grid" aria-selected="true" data-game-image-tab="memory-match" data-i18n="memoryMatchTab">Memory Match</button>
-                  <button type="button" class="owner-game-image-tab" role="tab" id="picture-jigsaw-images-tab" aria-controls="game-images-grid" aria-selected="false" tabindex="-1" data-game-image-tab="picture-jigsaw" data-i18n="picturePuzzleTab">Picture Puzzle</button>
-                </div>
-                <button type="button" class="admin-primary-button" data-game-image-add data-i18n="addImage">Add Image</button>
-              </div>
-              <p class="owner-game-image-guidance" data-i18n="gameImageUploadGuidance">WebP, PNG, or JPG · maximum 5 MB · images up to 8000 × 8000 pixels.</p>
-              <p class="owner-game-image-count" data-game-image-count aria-live="polite"></p>
-              <p class="admin-state owner-game-image-status" data-game-image-status role="status" aria-live="polite"></p>
-              <div class="owner-game-image-grid" id="game-images-grid" data-game-image-grid role="tabpanel" aria-labelledby="memory-match-images-tab" aria-live="polite"></div>
-              <dialog class="owner-game-image-dialog" data-game-image-dialog aria-labelledby="game-image-dialog-title">
-                <div class="owner-game-image-dialog-content">
-                  <div class="admin-panel-heading">
-                    <div><p class="admin-eyebrow" data-i18n="imagePreview">IMAGE PREVIEW</p><h3 id="game-image-dialog-title" data-game-image-dialog-title data-i18n="addImage">Add Image</h3></div>
-                  </div>
-                  <label class="owner-game-image-file-label"><span data-i18n="chooseImage">Choose an image</span><input type="file" data-game-image-file accept=".webp,.png,.jpg,.jpeg,image/webp,image/png,image/jpeg" /></label>
-                  <div class="owner-game-image-preview"><img data-game-image-preview alt="" /></div>
-                  <label class="owner-game-image-alt-label"><span data-i18n="imageDescription">Image description</span><input type="text" maxlength="200" data-game-image-alt required /></label>
-                  <p class="owner-game-image-dialog-status" data-game-image-dialog-status role="status" aria-live="polite"></p>
-                  <div class="owner-game-image-dialog-actions">
-                    <button type="button" class="admin-secondary-button" data-game-image-cancel data-i18n="cancel">Cancel</button>
-                    <button type="button" class="admin-primary-button" data-game-image-save disabled data-i18n="saveImage">Save Image</button>
-                  </div>
-                </div>
-              </dialog>
-            </article>
-          </section>
-
           <section class="admin-section" data-panel="activity" aria-labelledby="activity-title" hidden>
             <div class="admin-section-heading"><div><p class="admin-eyebrow"><span data-i18n="siteAudit">SITE SETTINGS &amp; AUDIT LOG</span> / 04</p><h2 id="activity-title" data-i18n="siteAudit">Site Settings &amp; Audit Log</h2></div><p data-i18n="activityDesc">Update public site details and review a chronological, read-only record of administrative actions.</p></div>
             <article class="admin-panel">
@@ -232,7 +196,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
                   <h3 data-i18n="siteMediaTitle">Site Images &amp; Media Manager</h3>
                 </div>
                 <select class="owner-media-filter" data-owner-media-filter aria-label="Filter media category">
-                  <option value="all" data-i18n="mediaCatAll">All Sections (32)</option>
+                  <option value="all" data-i18n="mediaCatAll">All Sections (43)</option>
                   <option value="hero" data-i18n="mediaCatHero">Hero &amp; Pages</option>
                   <option value="games" data-i18n="mediaCatGames">Games Artwork</option>
                   <option value="videos" data-i18n="mediaCatVideos">Video Posters</option>

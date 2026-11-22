@@ -574,6 +574,11 @@ final class OwnerDashboard
             'media_video_poster_2',
             'media_video_poster_3',
         ];
+        foreach (['memory_match' => 8, 'picture_jigsaw' => 3] as $game => $imageCount) {
+            for ($image = 1; $image <= $imageCount; $image++) {
+                $keys[] = sprintf('media_game_%s_%02d', $game, $image);
+            }
+        }
         for ($i = 1; $i <= 18; $i++) {
             $keys[] = sprintf('media_gallery_%02d', $i);
         }
