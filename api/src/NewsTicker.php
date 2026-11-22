@@ -32,23 +32,37 @@ final class NewsTicker
 
     public function publicData(): array
     {
-        $settings = $this->settings();
+        try {
+            $settings = $this->settings();
+        } catch (PDOException $exception) {
+            $settings = [
+                'enabled' => true,
+                'theme' => 'pink_indigo',
+                'speed_seconds' => 55,
+                'colors' => self::THEMES['pink_indigo'],
+            ];
+            return ['settings' => $settings, 'messages' => []];
+        }
         $messages = [];
         if ((bool) $settings['enabled']) {
-            $statement = $this->db->prepare(
-                "SELECT id, sender_name, message, source
-                 FROM news_ticker_messages
-                 WHERE status = 'Approved' AND display_active = 1
-                 ORDER BY approved_at DESC, id DESC",
-            );
-            $statement->execute();
-            foreach ($statement->fetchAll() as $row) {
-                $messages[] = [
-                    'id' => (int) $row['id'],
-                    'sender_name' => (string) $row['sender_name'],
-                    'message' => (string) $row['message'],
-                    'source' => (string) $row['source'],
-                ];
+            try {
+                $statement = $this->db->prepare(
+                    "SELECT id, sender_name, message, source
+                     FROM news_ticker_messages
+                     WHERE status = 'Approved' AND display_active = 1
+                     ORDER BY approved_at DESC, id DESC",
+                );
+                $statement->execute();
+                foreach ($statement->fetchAll() as $row) {
+                    $messages[] = [
+                        'id' => (int) $row['id'],
+                        'sender_name' => (string) $row['sender_name'],
+                        'message' => (string) $row['message'],
+                        'source' => (string) $row['source'],
+                    ];
+                }
+            } catch (PDOException $exception) {
+                $messages = [];
             }
         }
         return ['settings' => $settings, 'messages' => $messages];
