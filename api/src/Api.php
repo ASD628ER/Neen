@@ -1257,9 +1257,12 @@ final class Api
             );
         } catch (Throwable $exception) {
             error_log(sprintf(
-                'NEEN API error [request_id=%s] %s',
+                'NEEN API error [request_id=%s] %s: %s in %s:%d',
                 $this->requestId,
                 get_class($exception),
+                $exception->getMessage(),
+                $exception->getFile(),
+                $exception->getLine(),
             ));
             $this->send(
                 false,
