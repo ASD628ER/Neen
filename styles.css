@@ -9760,7 +9760,8 @@ html[dir="rtl"] .back-to-top {
   }
 }
 
-.neen-youtube-bubble {
+.neen-youtube-bubble,
+.neen-tiktok-bubble {
   position: fixed;
   right: max(18px, env(safe-area-inset-right));
   bottom: max(18px, env(safe-area-inset-bottom));
@@ -9781,7 +9782,13 @@ html[dir="rtl"] .back-to-top {
   isolation: isolate;
 }
 
-.neen-youtube-bubble::after {
+.neen-tiktok-bubble {
+  right: max(84px, calc(env(safe-area-inset-right) + 66px));
+  background: linear-gradient(135deg, #25F4EE 0%, #d65f96 48%, #29232f 100%);
+}
+
+.neen-youtube-bubble::after,
+.neen-tiktok-bubble::after {
   position: absolute;
   z-index: -1;
   width: 68px;
@@ -9799,8 +9806,15 @@ html[dir="rtl"] .back-to-top {
   filter: drop-shadow(0 2px 4px rgb(69 52 74 / 20%));
 }
 
+.neen-tiktok-bubble svg {
+  width: 34px;
+  height: 34px;
+  filter: drop-shadow(0 2px 5px rgb(69 52 74 / 24%));
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .neen-youtube-bubble:hover {
+  .neen-youtube-bubble:hover,
+  .neen-tiktok-bubble:hover {
     transform: translateY(-3px) scale(1.06);
     box-shadow:
       0 16px 34px rgb(116 78 138 / 34%),
@@ -9810,7 +9824,8 @@ html[dir="rtl"] .back-to-top {
   }
 }
 
-.neen-youtube-bubble:focus-visible {
+.neen-youtube-bubble:focus-visible,
+.neen-tiktok-bubble:focus-visible {
   outline: 3px solid rgb(200 200 237 / 95%);
   outline-offset: 4px;
 }
@@ -9827,14 +9842,20 @@ html[dir="rtl"] .back-to-top {
 }
 
 @media (max-width: 760px) {
-  .neen-youtube-bubble {
+  .neen-youtube-bubble,
+  .neen-tiktok-bubble {
     right: max(14px, env(safe-area-inset-right));
     bottom: max(14px, env(safe-area-inset-bottom));
     width: 52px;
     height: 52px;
   }
 
-  .neen-youtube-bubble::after {
+  .neen-tiktok-bubble {
+    right: max(78px, calc(env(safe-area-inset-right) + 64px));
+  }
+
+  .neen-youtube-bubble::after,
+  .neen-tiktok-bubble::after {
     width: 60px;
     height: 60px;
   }
@@ -9843,11 +9864,18 @@ html[dir="rtl"] .back-to-top {
     width: 30px;
     height: 22px;
   }
+
+  .neen-tiktok-bubble svg {
+    width: 30px;
+    height: 30px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .neen-youtube-bubble,
-  .neen-youtube-bubble::after {
+  .neen-youtube-bubble::after,
+  .neen-tiktok-bubble,
+  .neen-tiktok-bubble::after {
     transition: none;
     animation: none;
   }

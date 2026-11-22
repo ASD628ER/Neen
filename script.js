@@ -2003,26 +2003,37 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
 
 })();
 
-/* === NEEN YOUTUBE FLOATING BUBBLE === */
+/* === NEEN SOCIAL FLOATING BUBBLES === */
 (() => {
-  const mountYouTubeBubble = () => {
-    if (document.querySelector(".neen-youtube-bubble")) return;
+  const mountSocialBubbles = () => {
+    if (!document.querySelector(".neen-youtube-bubble")) {
+      const youtubeLink = document.createElement("a");
+      youtubeLink.className = "neen-youtube-bubble";
+      youtubeLink.href = "https://www.youtube.com/@Neen_/featured";
+      youtubeLink.target = "_blank";
+      youtubeLink.rel = "noopener noreferrer";
+      youtubeLink.setAttribute("aria-label", "Visit the official NEEN YouTube channel");
+      youtubeLink.title = "NEEN YouTube Channel";
+      youtubeLink.innerHTML = '<svg viewBox="0 0 48 34" aria-hidden="true" focusable="false"><rect x="1" y="3" width="46" height="28" rx="8" fill="#FF0033"/><path d="M20 10.5 32 17l-12 6.5z" fill="#FFFFFF"/></svg>';
+      document.body.append(youtubeLink);
+    }
 
-    const link = document.createElement("a");
-    link.className = "neen-youtube-bubble";
-    link.href = "https://www.youtube.com/@Neen_/featured";
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.setAttribute("aria-label", "Visit the official NEEN YouTube channel");
-    link.title = "NEEN YouTube Channel";
-    link.innerHTML = '<svg viewBox="0 0 48 34" aria-hidden="true" focusable="false"><rect x="1" y="3" width="46" height="28" rx="8" fill="#FF0033"/><path d="M20 10.5 32 17l-12 6.5z" fill="#FFFFFF"/></svg>';
-
-    document.body.append(link);
+    if (!document.querySelector(".neen-tiktok-bubble")) {
+      const tiktokLink = document.createElement("a");
+      tiktokLink.className = "neen-tiktok-bubble";
+      tiktokLink.href = "https://www.tiktok.com/@neen_0o";
+      tiktokLink.target = "_blank";
+      tiktokLink.rel = "noopener noreferrer";
+      tiktokLink.setAttribute("aria-label", "Follow NEEN on TikTok");
+      tiktokLink.title = "Follow NEEN on TikTok";
+      tiktokLink.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M19.2 3.2c.5 3.1 2.1 5 5.2 5.2v4.1c-1.8.2-3.5-.3-5.2-1.1v8.1c0 8.1-8.8 10.6-12.4 4.8-2.3-3.7-.9-10.2 7.7-10.5v4.3c-1.1.2-2.3.4-3.2 1.1-1.2.9-1.6 2.6-.7 3.8 1.2 1.7 4.3 1.4 4.3-2V3.2h4.3Z" fill="#fff"/><path d="M19.2 3.2c.5 3.1 2.1 5 5.2 5.2v2.1c-2.4.2-4.1-.7-5.2-1.9v11c0 8.1-8.8 10.6-12.4 4.8-1.4-2.2-1.3-5.7.6-8.1-4.2 6.3 2.9 10.1 6.1 6.2 1.1-1.3 1.4-3.1 1.4-5V3.2h4.3Z" fill="#25F4EE" opacity=".9"/><path d="M21.2 3.2c.5 3.1 2.1 5 5.2 5.2v2.1c-2.1.1-3.9-.7-5.2-1.9v11c0 8.1-8.8 10.6-12.4 4.8-.9-1.5-1.2-3.4-.9-5.1 1.2 3.4 5 4.6 7.1 1.8 1.1-1.5 1.2-3.4 1.2-5.2V3.2h5Z" fill="#FE2C55" opacity=".72"/></svg>';
+      document.body.append(tiktokLink);
+    }
   };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", mountYouTubeBubble);
+    document.addEventListener("DOMContentLoaded", mountSocialBubbles);
   } else {
-    mountYouTubeBubble();
+    mountSocialBubbles();
   }
 })();
