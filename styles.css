@@ -9416,12 +9416,66 @@ html[dir="rtl"] .back-to-top {
 
 @media (max-width: 700px) {
   .home-page .arcade-spotlight {
-    min-height: 490px;
-    padding: 30px 20px 54px;
+    min-height: 0;
+    padding: clamp(116px, 31vw, 142px) 16px 22px;
+    border-radius: 20px;
+    box-shadow:
+      0 20px 42px rgb(15 6 29 / 38%),
+      0 8px 20px rgb(152 55 193 / 15%),
+      0 0 26px rgb(255 79 163 / 8%),
+      inset 0 1px 0 rgb(255 255 255 / 15%);
   }
 
   .home-page .arcade-spotlight-copy {
     max-width: 100%;
+    transform: translateZ(16px);
+  }
+
+  .home-page .arcade-kicker {
+    gap: 7px;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+  }
+
+  .home-page .arcade-spotlight h3 {
+    margin-top: 10px;
+    font-size: clamp(30px, 8vw, 38px);
+    line-height: 1;
+  }
+
+  .home-page .arcade-spotlight-copy > p:not(.arcade-kicker) {
+    margin-top: 8px;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .home-page .island-zone-list {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .home-page .island-zone-list li {
+    padding: 5px 8px;
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .home-page .arcade-spotlight-actions {
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .home-page .arcade-spotlight .button-primary {
+    min-height: 44px;
+    padding-inline: 13px;
+    font-size: 12px;
+  }
+
+  .home-page .arcade-spotlight .arcade-reward-badge {
+    min-height: 26px;
+    padding: 4px 8px;
+    font-size: 8px;
+    letter-spacing: 0.02em;
   }
 
   .home-page .arcade-spotlight-art::after {
@@ -9431,12 +9485,21 @@ html[dir="rtl"] .back-to-top {
   }
 
   .home-page .arcade-spotlight-art img {
-    object-position: 58% center;
+    object-position: 58% 28%;
   }
 
   .home-page .arcade-spotlight-art figcaption {
-    right: 18px;
-    bottom: 14px;
+    top: 42px;
+    right: 14px;
+    bottom: auto;
+    left: auto;
+    font-size: 7px;
+  }
+
+  .home-page .arcade-spotlight-index {
+    top: 14px;
+    right: 14px;
+    font-size: 8px;
   }
 }
 
