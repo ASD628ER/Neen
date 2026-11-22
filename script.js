@@ -2002,3 +2002,27 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
   }
 
 })();
+
+/* === NEEN YOUTUBE FLOATING BUBBLE === */
+(() => {
+  const mountYouTubeBubble = () => {
+    if (document.querySelector(".neen-youtube-bubble")) return;
+
+    const link = document.createElement("a");
+    link.className = "neen-youtube-bubble";
+    link.href = "https://www.youtube.com/@Neen_/featured";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.setAttribute("aria-label", "Visit the official NEEN YouTube channel");
+    link.title = "NEEN YouTube Channel";
+    link.innerHTML = '<svg viewBox="0 0 48 34" aria-hidden="true" focusable="false"><rect x="1" y="3" width="46" height="28" rx="8" fill="#FF0033"/><path d="M20 10.5 32 17l-12 6.5z" fill="#FFFFFF"/></svg>';
+
+    document.body.append(link);
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mountYouTubeBubble);
+  } else {
+    mountYouTubeBubble();
+  }
+})();

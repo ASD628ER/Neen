@@ -9759,3 +9759,96 @@ html[dir="rtl"] .back-to-top {
     transition-duration: 0.01ms;
   }
 }
+
+.neen-youtube-bubble {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 80;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 2px solid rgb(255 255 255 / 82%);
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #d65f96 0%, #b44f87 48%, #7778ae 100%);
+  box-shadow:
+    0 12px 28px rgb(116 78 138 / 28%),
+    0 0 22px rgb(214 95 150 / 34%),
+    inset 0 1px 0 rgb(255 255 255 / 28%);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  isolation: isolate;
+}
+
+.neen-youtube-bubble::after {
+  position: absolute;
+  z-index: -1;
+  width: 68px;
+  height: 68px;
+  border: 1px solid rgb(200 200 237 / 55%);
+  border-radius: 50%;
+  content: "";
+  opacity: 0.7;
+  animation: neen-youtube-glow 2.8s ease-in-out infinite;
+}
+
+.neen-youtube-bubble svg {
+  width: 34px;
+  height: 24px;
+  filter: drop-shadow(0 2px 4px rgb(69 52 74 / 20%));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .neen-youtube-bubble:hover {
+    transform: translateY(-3px) scale(1.06);
+    box-shadow:
+      0 16px 34px rgb(116 78 138 / 34%),
+      0 0 30px rgb(235 136 180 / 48%),
+      inset 0 1px 0 rgb(255 255 255 / 32%);
+    filter: saturate(1.08);
+  }
+}
+
+.neen-youtube-bubble:focus-visible {
+  outline: 3px solid rgb(200 200 237 / 95%);
+  outline-offset: 4px;
+}
+
+@keyframes neen-youtube-glow {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.42;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.78;
+  }
+}
+
+@media (max-width: 760px) {
+  .neen-youtube-bubble {
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    width: 52px;
+    height: 52px;
+  }
+
+  .neen-youtube-bubble::after {
+    width: 60px;
+    height: 60px;
+  }
+
+  .neen-youtube-bubble svg {
+    width: 30px;
+    height: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neen-youtube-bubble,
+  .neen-youtube-bubble::after {
+    transition: none;
+    animation: none;
+  }
+}
