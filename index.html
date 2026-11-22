@@ -66,6 +66,32 @@
           </div>
         </section>
 
+        <section class="neen-news-ticker-section" data-news-ticker-section hidden aria-label="NEEN news ticker">
+          <div class="neen-news-ticker-shell">
+            <div class="neen-news-ticker-label"><span aria-hidden="true">◈</span><strong>NEEN NEWS</strong></div>
+            <div class="neen-news-ticker-viewport" data-news-ticker-viewport>
+              <div class="neen-news-ticker-track" data-news-ticker-track></div>
+            </div>
+            <button class="neen-news-submit-toggle" type="button" data-news-submit-toggle aria-expanded="false" aria-controls="neen-news-submit-panel">
+              <span>Send a message</span><span aria-hidden="true">＋</span>
+            </button>
+          </div>
+          <div class="neen-news-submit-panel" id="neen-news-submit-panel" data-news-submit-panel hidden>
+            <form class="neen-news-submit-form" data-news-submit-form novalidate>
+              <label>
+                <span>Sender name</span>
+                <input name="sender_name" type="text" minlength="2" maxlength="40" autocomplete="name" required />
+              </label>
+              <label>
+                <span>Message</span>
+                <textarea name="message" minlength="3" maxlength="280" rows="2" required></textarea>
+              </label>
+              <button class="button button-primary" type="submit">Send for review</button>
+            </form>
+            <p class="neen-news-submit-status" data-news-submit-status role="status" aria-live="polite"></p>
+          </div>
+        </section>
+
         <section class="hub-highlights" id="discover" aria-label="NEEN hub highlights">
           <a class="hub-highlight-card" href="#arcade"><span class="hub-highlight-icon" aria-hidden="true">05</span><span>5 Coin Mini-Games</span><span class="hub-highlight-arrow" aria-hidden="true">↗</span></a>
           <a class="hub-highlight-card" href="account.html"><span class="hub-highlight-icon" aria-hidden="true">◷</span><span>Cairo Daily Rewards</span><span class="hub-highlight-arrow" aria-hidden="true">↗</span></a>

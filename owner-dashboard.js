@@ -26,6 +26,7 @@
     selectedUser: null,
     games: [],
     siteSettings: {},
+    newsData: null,
     mediaCategory: "all",
     language: readLanguagePreference(),
   };
@@ -175,7 +176,7 @@
     },
     ar: {
       overview: "العمليات اليومية", users: "المستخدمون", wallet: "المحفظة والمعاملات", modules: "الأنظمة المتصلة",
-      activity: "سجل نشاط الإدارة", ownerVerified: "مباشر · تم التحقق من المالك", ownerDashboard: "مركز قيادة مالك NEEN",
+      activity: "سجل نشاط الإدارة", ownerVerified: "مباشر · تم التحقق من المالك", ownerDashboard: "مركز قيادة مالك NEEN", newsTickerNav: "إدارة شريط الأخبار",
       dailyOperations: "العمليات اليومية", playersWallet: "اللاعبون والمحفظة", allSections: "كل الأقسام",
       gamesRewardsNav: "الألعاب والمكافآت", siteAudit: "إعدادات الموقع وسجل النشاط",
       eventsOrdersAdmin: "إدارة الفعاليات وطلبات الجواهر", backToSite: "العودة إلى الموقع",
@@ -235,7 +236,7 @@
       totalUsers: "إجمالي المستخدمين", newUsers: "حسابات جديدة (30 يومًا)", activeUsers: "مستخدمون نشطون (30 يومًا)",
       totalCoins: "Coins في المحافظ", totalOrders: "طلبات الجواهر", pendingOrders: "طلبات جواهر مفتوحة",
       cancel: "إلغاء", networkError: "تعذر إكمال الطلب. تحقق من الاتصال وحاول مجددًا.",
-      documentTitle: "لوحة المالك — NEEN", ownerControlRoom: "غرفة تحكم المالك",
+      documentTitle: "لوحة المالك — NEEN", ownerControlRoom: "غرفة تحكم المالك", newsTickerNav: "إدارة شريط الأخبار",
       ownerOperations: "NEEN / مركز قيادة المالك", ownerRole: "المالك", ownerNavLabel: "تنقل المالك",
       homeLabel: "الرئيسية — NEEN", sectionsLabel: "أقسام لوحة التحكم", switchLanguage: "تغيير لغة لوحة التحكم",
       liveDatabase: "قاعدة البيانات المباشرة", thirtyDays: "آخر 30 يومًا", latest: "الأحدث",
@@ -464,6 +465,7 @@
     if (activePanels.includes("users")) loadUsers();
     if (activePanels.includes("activity")) loadSiteSettings();
     if (activePanels.includes("modules")) loadGames();
+    if (activePanels.includes("news")) loadNewsTicker();
     if (activePanels.includes("activity")) loadActivity();
   };
 
@@ -1155,6 +1157,181 @@
     }
   };
 
+  const renderNewsPreview = () => {
+    if (!state.newsData) return;
+    const preview = document.querySelector("[data-owner-news-preview]");
+    if (!(preview instanceof HTMLElement)) return;
+    const form = document.querySelector("[data-owner-news-settings]");
+    if (!(form instanceof HTMLFormElement)) return;
+    const themeInput = form.querySelector('input[name="theme"]:checked');
+    const themeId = themeInput instanceof HTMLInputElement ? themeInput.value : state.newsData.settings.theme;
+    const customTheme = state.newsData.themes[themeId] || state.newsData.themes.pink_indigo;
+    preview.style.setProperty("--owner-news-background", customTheme.background);
+    preview.style.setProperty("--owner-news-text", customTheme.text);
+    preview.style.setProperty("--owner-news-sender", customTheme.sender);
+    preview.style.setProperty("--owner-news-separator", customTheme.separator);
+    preview.style.setProperty("--owner-news-glow", customTheme.glow);
+    const speedInput = form.elements.namedItem("speed_seconds");
+    if (speedInput instanceof HTMLInputElement) {
+      preview.style.setProperty("--owner-news-speed", `${speedInput.value}s`);
+      const speedLabel = document.querySelector("[data-news-speed-label]");
+      if (speedLabel) speedLabel.textContent = `${speedInput.value} seconds`;
+    }
+  };
+
+  const renderNewsMessages = () => {
+    const container = document.querySelector("[data-owner-news-messages]");
+    if (!(container instanceof HTMLElement) || !state.newsData) return;
+    container.replaceChildren();
+    if (!state.newsData.messages.length) {
+      showState(container, "No news messages have been submitted.");
+      return;
+    }
+
+    state.newsData.messages.forEach((item) => {
+      const card = make("article", "owner-news-message-card");
+      card.dataset.status = item.status;
+
+      const heading = make("div", "owner-news-message-heading");
+      heading.append(make("strong", "", `#${item.id}`));
+      const status = make("span", `owner-news-status is-${item.status.toLowerCase()}`, item.status);
+      if (item.status === "Approved") status.textContent += item.display_active ? " · Visible" : " · Paused";
+      heading.append(status);
+
+      const senderInput = make("input", "owner-news-edit-input");
+      senderInput.value = item.sender_name;
+      senderInput.maxLength = 40;
+      senderInput.setAttribute("aria-label", "Sender name");
+      const messageInput = make("textarea", "owner-news-edit-input");
+      messageInput.value = item.message;
+      messageInput.maxLength = 280;
+      messageInput.rows = 2;
+      messageInput.setAttribute("aria-label", "News message");
+
+      const actions = make("div", "owner-news-actions");
+      const save = make("button", "admin-secondary-button", "Save edit");
+      save.type = "button";
+      save.addEventListener("click", async () => {
+        try {
+          const result = await mutate(`/api/owner/news-ticker/messages/${item.id}`, "PATCH", {
+            sender_name: senderInput.value,
+            message: messageInput.value,
+          });
+          toast("News message saved.");
+          await loadNewsTicker();
+        } catch (error) {
+          toast(error instanceof Error ? error.message : t("failed"), true);
+        }
+      });
+
+      const actionButton = (label, action, className = "admin-secondary-button") => {
+        const button = make("button", className, label);
+        button.type = "button";
+        button.addEventListener("click", async () => {
+          try {
+            await mutate(`/api/owner/news-ticker/messages/${item.id}/${action}`, "POST", {});
+            toast(`${label} completed.`);
+            await loadNewsTicker();
+          } catch (error) {
+            toast(error instanceof Error ? error.message : t("failed"), true);
+          }
+        });
+        return button;
+      };
+
+      actions.append(save);
+      if (item.status === "Pending") {
+        actions.append(actionButton("Approve", "approve", "admin-primary-button"));
+        actions.append(actionButton("Reject", "reject"));
+      } else if (item.status === "Approved") {
+        actions.append(item.display_active
+          ? actionButton("Pause", "pause")
+          : actionButton("Resume", "resume", "admin-primary-button"));
+      } else if (item.status !== "Deleted") {
+        actions.append(actionButton("Approve", "approve", "admin-primary-button"));
+      }
+      actions.append(actionButton("Delete", "delete", "admin-danger-button"));
+
+      card.append(heading, senderInput, messageInput, actions);
+      container.append(card);
+    });
+  };
+
+  const loadNewsTicker = async () => {
+    const form = document.querySelector("[data-owner-news-settings]");
+    const themesContainer = document.querySelector("[data-owner-news-themes]");
+    if (!(form instanceof HTMLFormElement) || !(themesContainer instanceof HTMLElement)) return;
+    try {
+      state.newsData = await apiRequest("/api/owner/news-ticker");
+      const settings = state.newsData.settings;
+      const enabled = form.elements.namedItem("enabled");
+      if (enabled instanceof HTMLInputElement) enabled.checked = settings.enabled;
+      const speed = form.elements.namedItem("speed_seconds");
+      if (speed instanceof HTMLInputElement) speed.value = String(settings.speed_seconds);
+
+      themesContainer.replaceChildren();
+      Object.entries(state.newsData.themes).forEach(([themeId, colors]) => {
+        const label = make("label", `owner-news-theme-option theme-${themeId}`);
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "theme";
+        radio.value = themeId;
+        radio.checked = themeId === settings.theme;
+        radio.addEventListener("change", renderNewsPreview);
+        const themeNames = {
+          pink_indigo: "Pink & Indigo",
+          electric_purple: "Electric Purple",
+          cyber_blue: "Cyber Blue",
+          combat_red: "Combat Red",
+          legendary_gold: "Legendary Gold",
+        };
+        const name = make("strong", "", themeNames[themeId] || themeId);
+        const swatches = make("span", "owner-news-theme-swatches");
+        [colors.background, colors.text, colors.sender, colors.separator, colors.glow].forEach((color) => {
+          const swatch = make("i", "");
+          swatch.style.background = color;
+          swatches.append(swatch);
+        });
+        label.append(radio, name, swatches);
+        themesContainer.append(label);
+      });
+
+      renderNewsPreview();
+      renderNewsMessages();
+    } catch (error) {
+      toast(error instanceof Error ? error.message : t("failed"), true);
+    }
+  };
+
+  const newsForm = document.querySelector("[data-owner-news-settings]");
+  if (newsForm instanceof HTMLFormElement) {
+    newsForm.addEventListener("input", renderNewsPreview);
+    newsForm.addEventListener("change", renderNewsPreview);
+    newsForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!state.newsData) return;
+      const themeInput = newsForm.querySelector('input[name="theme"]:checked');
+      const themeId = themeInput instanceof HTMLInputElement ? themeInput.value : state.newsData.settings.theme;
+      const colors = state.newsData.themes[themeId];
+      const enabledInput = newsForm.elements.namedItem("enabled");
+      const speedInput = newsForm.elements.namedItem("speed_seconds");
+      try {
+        await mutate("/api/owner/news-ticker", "PATCH", {
+          enabled: enabledInput instanceof HTMLInputElement ? enabledInput.checked : true,
+          theme: themeId,
+          speed_seconds: speedInput instanceof HTMLInputElement ? Number(speedInput.value) : 55,
+          colors,
+        });
+        toast("News ticker settings saved.");
+        await loadNewsTicker();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : t("failed"), true);
+      }
+    });
+  }
+
+  document.querySelector("[data-owner-news-refresh]")?.addEventListener("click", loadNewsTicker);
+
   const refreshSelected = async () => {
     if (!state.selectedUser) return;
     await selectUser(state.selectedUser.id, "users");
@@ -1338,6 +1515,7 @@
       languageToggle.textContent = state.language === "en" ? "عربي" : "EN";
     }
     if (state.selectedUser) renderUserDetails(state.selectedUser);
+    if (!document.querySelector('[data-panel="news"]').hidden) loadNewsTicker();
     if (!document.querySelector('[data-panel="overview"]').hidden) loadOverview();
     if (!document.querySelector('[data-panel="users"]').hidden) loadUsers(state.userPage);
     if (!document.querySelector('[data-panel="activity"]').hidden) loadActivity(state.activityPage);

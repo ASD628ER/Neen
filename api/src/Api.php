@@ -38,6 +38,81 @@ final class Api
                 $this->send(true, ['settings' => (new OwnerDashboard($this->db))->siteSettings()]);
             }
 
+            if ($path === '/api/news-ticker') {
+                $this->expectMethod($method, 'GET');
+                $this->send(true, (new NewsTicker($this->db))->publicData());
+            }
+
+            if ($path === '/api/news-ticker/messages') {
+                $this->expectMethod($method, 'POST');
+                $this->requireCsrf();
+                $this->requireAllowedFields(['sender_name', 'message']);
+                $senderName = $this->body['sender_name'] ?? null;
+                $message = $this->body['message'] ?? null;
+                if (!is_string($senderName) || !is_string($message)) {
+                    throw new ApiException('VALIDATION_ERROR', 'Sender name and message are required.', 422);
+                }
+                $ip = $this->clientIp() ?? 'unknown';
+                $this->rateLimiter->consume('news-ticker:submit:ip:' . $ip, 5, 3600);
+                $ticker = new NewsTicker($this->db);
+                $result = $ticker->submit($senderName, $message, $ip);
+                $this->audit(null, 'news_ticker_submitted', 'news_ticker_message', $result['id'], [
+                    'status' => 'Pending',
+                ]);
+                $this->send(true, ['submission' => $result], [], 201);
+            }
+
+            if ($path === '/api/owner/news-ticker') {
+                $auth = $this->requireAuth();
+                $this->requireOwner($auth['user_id']);
+                $ticker = new NewsTicker($this->db);
+                if ($method === 'GET') {
+                    $this->send(true, $ticker->ownerData());
+                }
+                $this->expectMethod($method, 'PATCH');
+                $this->requireCsrf($auth);
+                $this->requireAllowedFields(['enabled', 'theme', 'speed_seconds', 'colors']);
+                $settings = $this->transaction(fn (): array => $ticker->updateSettings($this->body));
+                $this->audit($auth['user_id'], 'news_ticker_settings_saved', 'news_ticker_settings', 1, [
+                    'theme' => $settings['theme'],
+                    'enabled' => $settings['enabled'],
+                    'speed_seconds' => $settings['speed_seconds'],
+                ]);
+                $this->send(true, ['settings' => $settings]);
+            }
+
+            if (preg_match('#\A/api/owner/news-ticker/messages/([1-9][0-9]*)\z#', $path, $match) === 1) {
+                $auth = $this->requireAuth();
+                $this->requireOwner($auth['user_id']);
+                $this->expectMethod($method, 'PATCH');
+                $this->requireCsrf($auth);
+                $this->requireAllowedFields(['sender_name', 'message', 'display_active']);
+                $ticker = new NewsTicker($this->db);
+                $message = $this->transaction(fn (): array => $ticker->updateMessage((int) $match[1], $this->body));
+                $this->audit($auth['user_id'], 'news_ticker_message_updated', 'news_ticker_message', $message['id']);
+                $this->send(true, ['message' => $message]);
+            }
+
+            if (preg_match('#\A/api/owner/news-ticker/messages/([1-9][0-9]*)/(approve|reject|delete|pause|resume)\z#', $path, $match) === 1) {
+                $auth = $this->requireAuth();
+                $this->requireOwner($auth['user_id']);
+                $this->expectMethod($method, 'POST');
+                $this->requireCsrf($auth);
+                $this->requireAllowedFields([]);
+                $messageId = (int) $match[1];
+                $action = $match[2];
+                $ticker = new NewsTicker($this->db);
+                $message = match ($action) {
+                    'approve' => $ticker->setStatus($messageId, 'Approved', $auth['user_id']),
+                    'reject' => $ticker->setStatus($messageId, 'Rejected', $auth['user_id']),
+                    'delete' => $ticker->setStatus($messageId, 'Deleted', $auth['user_id']),
+                    'pause' => $ticker->pause($messageId),
+                    'resume' => $ticker->resume($messageId),
+                };
+                $this->audit($auth['user_id'], 'news_ticker_message_' . $action, 'news_ticker_message', $messageId);
+                $this->send(true, ['message' => $message]);
+            }
+
             if ($path === '/api/owner/dashboard') {
                 $this->expectMethod($method, 'GET');
                 $this->requireOwner($this->requireAuth()['user_id']);

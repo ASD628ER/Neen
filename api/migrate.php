@@ -10,7 +10,7 @@ try {
         throw new RuntimeException('Database migration requires MySQL.');
     }
 
-    foreach (['schema.sql', 'coins-schema.sql', 'games-schema.sql', 'attendance-schema.sql', 'homepage-rewards-schema.sql', 'community-schema.sql', 'diamonds-schema.sql'] as $schemaFile) {
+    foreach (['schema.sql', 'coins-schema.sql', 'games-schema.sql', 'attendance-schema.sql', 'homepage-rewards-schema.sql', 'community-schema.sql', 'diamonds-schema.sql', 'news-ticker-schema.sql'] as $schemaFile) {
         if ($schemaFile === 'coins-schema.sql') {
             $columns = $db->query(
                 "SELECT COLUMN_NAME FROM information_schema.COLUMNS

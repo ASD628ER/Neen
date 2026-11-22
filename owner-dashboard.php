@@ -75,7 +75,8 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
           <button type="button" class="admin-nav-item" data-section="users"><span class="admin-nav-index">02</span><span data-i18n="playersWallet">Players &amp; Wallet</span></button>
           <button type="button" class="admin-nav-item" data-section="wallet"><span class="admin-nav-index">00</span><span data-i18n="allSections">All Sections</span></button>
           <button type="button" class="admin-nav-item" data-section="modules"><span class="admin-nav-index">03</span><span data-i18n="gamesRewardsNav">Games &amp; Rewards</span></button>
-          <button type="button" class="admin-nav-item" data-section="activity"><span class="admin-nav-index">04</span><span data-i18n="siteAudit">Site Settings &amp; Audit Log</span></button>
+          <button type="button" class="admin-nav-item" data-section="news"><span class="admin-nav-index">04</span><span data-i18n="newsTickerNav">News Ticker</span></button>
+          <button type="button" class="admin-nav-item" data-section="activity"><span class="admin-nav-index">05</span><span data-i18n="siteAudit">Site Settings &amp; Audit Log</span></button>
         </nav>
         <div class="admin-sidebar-footer"><span class="admin-live-dot" aria-hidden="true"></span><span data-i18n="ownerVerified">OWNER ROLE SERVER-VERIFIED</span></div>
       </aside>
@@ -176,6 +177,45 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
               <button type="button" class="owner-module-card owner-module-action" data-open-section="activity"><span>02</span><strong data-i18n="contentManagement">Site Images &amp; Media</strong><small data-i18n="mediaCardDesc">Upload and replace hero banners, character gallery frames, game artwork, and icons across the live site.</small><b data-i18n="openMediaManager">Open media manager ↗</b></button>
               <article class="owner-module-card owner-module-unavailable"><span>03</span><strong data-i18n="charts">Extended reports</strong><small data-i18n="reportsScope">The Overview charts are real 30-day database series. Additional reporting dimensions are not yet implemented.</small><b data-i18n="notAvailable">Not available</b></article>
             </div>
+          </section>
+
+          <section class="admin-section" data-panel="news" aria-labelledby="news-title" hidden>
+            <div class="admin-section-heading">
+              <div><p class="admin-eyebrow">PUBLIC CONTENT / NEWS</p><h2 id="news-title" data-i18n="newsTickerNav">News Ticker Management</h2></div>
+              <p>Review visitor messages, control publication, themes, movement, and live preview.</p>
+            </div>
+
+            <div class="owner-news-grid">
+              <article class="admin-panel">
+                <div class="admin-panel-heading"><div><p class="admin-eyebrow">LIVE SETTINGS</p><h3>Ticker controls</h3></div></div>
+                <form class="owner-news-settings" data-owner-news-settings>
+                  <label class="owner-news-toggle"><input name="enabled" type="checkbox" /><span>News ticker enabled</span></label>
+                  <label class="owner-news-range">
+                    <span>Speed <strong data-news-speed-label>55 seconds</strong></span>
+                    <input name="speed_seconds" type="range" min="20" max="120" step="5" value="55" />
+                    <small>Faster: 20 seconds · Easier reading: 120 seconds</small>
+                  </label>
+                  <fieldset class="owner-news-themes">
+                    <legend>Color system</legend>
+                    <div data-owner-news-themes></div>
+                  </fieldset>
+                  <button class="admin-primary-button" type="submit">Save ticker settings</button>
+                </form>
+              </article>
+
+              <article class="admin-panel">
+                <div class="admin-panel-heading"><div><p class="admin-eyebrow">LIVE PREVIEW</p><h3>Home ticker preview</h3></div></div>
+                <div class="owner-news-preview" data-owner-news-preview>
+                  <div class="owner-news-preview-label">NEEN NEWS</div>
+                  <div class="owner-news-preview-track"><span><strong>SNOOP:</strong> Welcome to NEEN Gaming Arena!</span></div>
+                </div>
+              </article>
+            </div>
+
+            <article class="admin-panel">
+              <div class="admin-panel-heading"><div><p class="admin-eyebrow">MESSAGE QUEUE</p><h3>Visitor submissions</h3></div><button type="button" class="admin-secondary-button" data-owner-news-refresh>Refresh</button></div>
+              <div class="owner-news-messages" data-owner-news-messages aria-live="polite"><p class="admin-state">Loading news messages…</p></div>
+            </article>
           </section>
 
           <section class="admin-section" data-panel="activity" aria-labelledby="activity-title" hidden>

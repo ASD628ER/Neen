@@ -529,3 +529,39 @@ CREATE TABLE diamond_order_activity (
     admin_note TEXT,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE news_ticker_settings (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0, 1)),
+    theme TEXT NOT NULL DEFAULT 'pink_indigo',
+    speed_seconds INTEGER NOT NULL DEFAULT 55 CHECK (speed_seconds BETWEEN 20 AND 120),
+    background_color TEXT NOT NULL DEFAULT '#17132F',
+    text_color TEXT NOT NULL DEFAULT '#FFF8FC',
+    sender_color TEXT NOT NULL DEFAULT '#F3A3C6',
+    separator_color TEXT NOT NULL DEFAULT '#C8C8ED',
+    glow_color TEXT NOT NULL DEFAULT '#D65F96',
+    updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE news_ticker_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Deleted')),
+    display_active INTEGER NOT NULL DEFAULT 0 CHECK (display_active IN (0, 1)),
+    ip_address TEXT,
+    approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    approved_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX idx_news_ticker_public ON news_ticker_messages(status, display_active, approved_at);
+CREATE INDEX idx_news_ticker_status_created ON news_ticker_messages(status, created_at);
+
+INSERT INTO news_ticker_settings
+    (singleton, enabled, theme, speed_seconds, background_color, text_color,
+     sender_color, separator_color, glow_color, updated_at)
+VALUES
+    (1, 1, 'pink_indigo', 55, '#17132F', '#FFF8FC', '#F3A3C6', '#C8C8ED', '#D65F96', CURRENT_TIMESTAMP);

@@ -2003,6 +2003,114 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
 
 })();
 
+/* === NEEN NEWS TICKER PUBLIC UI === */
+(() => {
+  const section = document.querySelector("[data-news-ticker-section]");
+  if (!(section instanceof HTMLElement)) return;
+
+  const track = section.querySelector("[data-news-ticker-track]");
+  const viewport = section.querySelector("[data-news-ticker-viewport]");
+  const toggle = section.querySelector("[data-news-submit-toggle]");
+  const panel = section.querySelector("[data-news-submit-panel]");
+  const form = section.querySelector("[data-news-submit-form]");
+  const status = section.querySelector("[data-news-submit-status]");
+
+  const makeItem = (item) => {
+    const node = document.createElement("span");
+    node.className = "neen-news-ticker-item";
+    const sender = document.createElement("strong");
+    sender.textContent = `${item.sender_name}:`;
+    const message = document.createElement("span");
+    message.textContent = item.message;
+    node.append(sender, message);
+    return node;
+  };
+
+  const renderTrack = (messages) => {
+    track.replaceChildren();
+    if (messages.length === 0) {
+      viewport.hidden = true;
+      return;
+    }
+    viewport.hidden = false;
+    for (let copy = 0; copy < 2; copy += 1) {
+      const group = document.createElement("div");
+      group.className = "neen-news-ticker-group";
+      group.setAttribute("aria-hidden", copy === 1 ? "true" : "false");
+      messages.forEach((item) => group.append(makeItem(item)));
+      track.append(group);
+    }
+  };
+
+  const loadTicker = async () => {
+    try {
+      const response = await fetch("/api/news-ticker", { credentials: "same-origin", cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok || result.success !== true) throw new Error("Ticker unavailable");
+      const data = result.data;
+      const settings = data.settings;
+      section.hidden = false;
+      section.style.setProperty("--neen-news-background", settings.colors.background);
+      section.style.setProperty("--neen-news-text", settings.colors.text);
+      section.style.setProperty("--neen-news-sender", settings.colors.sender);
+      section.style.setProperty("--neen-news-separator", settings.colors.separator);
+      section.style.setProperty("--neen-news-glow", settings.colors.glow);
+      section.style.setProperty("--neen-news-speed", `${settings.speed_seconds}s`);
+      if (settings.enabled) {
+        renderTrack(data.messages);
+      } else {
+        viewport.hidden = true;
+      }
+    } catch {
+      section.hidden = true;
+    }
+  };
+
+  toggle?.addEventListener("click", () => {
+    const opening = panel.hidden;
+    panel.hidden = !opening;
+    toggle.setAttribute("aria-expanded", String(opening));
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    const data = Object.fromEntries(new FormData(form));
+    status.textContent = "Sending…";
+    try {
+      const csrfResponse = await fetch("/api/auth/csrf", { credentials: "same-origin", cache: "no-store" });
+      const csrfResult = await csrfResponse.json();
+      const csrfToken = csrfResult.data?.csrf_token;
+      if (!csrfResponse.ok || typeof csrfToken !== "string") throw new Error("Could not prepare secure submission.");
+
+      const response = await fetch("/api/news-ticker/messages", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (!response.ok || result.success !== true) {
+        throw new Error(result.errors?.[0]?.message || "The message could not be sent.");
+      }
+      form.reset();
+      status.textContent = "Your message was received and is waiting for owner review.";
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : "The message could not be sent.";
+    }
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", loadTicker, { once: true });
+  } else {
+    loadTicker();
+  }
+})();
+
 /* === NEEN SOCIAL FLOATING BUBBLES === */
 (() => {
   const mountSocialBubbles = () => {
