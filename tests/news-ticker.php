@@ -55,10 +55,12 @@ try {
     tickerAssert($exception->httpStatus === 422, 'Unsafe message text is rejected with 422');
 }
 
-$approved = $ticker->setStatus($submission['id'], 'Approved', null);
+$approved = $ticker->setStatus($submission['id'], 'Approved', $ownerId);
 tickerAssert(
-    $approved['status'] === 'Approved' && $approved['display_active'] === true,
-    'Owner approval publishes and activates the message',
+    $approved['status'] === 'Approved'
+        && $approved['display_active'] === true
+        && $approved['approved_at'] !== null,
+    'Owner approval publishes, activates, and records the approval time',
 );
 
 $afterApproval = $ticker->publicData();
@@ -105,8 +107,12 @@ tickerAssert(
 );
 
 $rejectedSubmission = $ticker->submit('SPAMMER', 'Rejected for community rules', '127.0.0.1');
-$rejected = $ticker->setStatus($rejectedSubmission['id'], 'Rejected', null);
+$rejected = $ticker->setStatus($rejectedSubmission['id'], 'Rejected', $ownerId);
 tickerAssert($rejected['status'] === 'Rejected', 'Owner can reject a pending message');
+tickerAssert(
+    !in_array($rejectedSubmission['id'], array_column($ticker->publicData()['messages'], 'id'), true),
+    'Rejected messages do not appear in public data',
+);
 
 $deleted = $ticker->setStatus($rejectedSubmission['id'], 'Deleted', null);
 tickerAssert($deleted['status'] === 'Deleted', 'Owner can delete a message with Deleted state');

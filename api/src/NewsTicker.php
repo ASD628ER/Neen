@@ -277,14 +277,15 @@ final class NewsTicker
         $displayActive = $status === 'Approved';
         $statement = $this->db->prepare(
             'UPDATE news_ticker_messages SET status = :status, display_active = :display_active,
-                    approved_by = CASE WHEN :status_approved = \'Approved\' THEN :approved_by ELSE approved_by END,
-                    approved_at = CASE WHEN :status_approved = \'Approved\' THEN :approved_at ELSE approved_at END,
+                    approved_by = CASE WHEN :status_approved_by = \'Approved\' THEN :approved_by ELSE approved_by END,
+                    approved_at = CASE WHEN :status_approved_at = \'Approved\' THEN :approved_at ELSE approved_at END,
                     updated_at = :updated_at WHERE id = :id',
         );
         $statement->execute([
             'status' => $status,
             'display_active' => $displayActive ? 1 : 0,
-            'status_approved' => $status,
+            'status_approved_by' => $status,
+            'status_approved_at' => $status,
             'approved_by' => $actorUserId,
             'approved_at' => $now,
             'updated_at' => $now,
