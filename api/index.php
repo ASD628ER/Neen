@@ -15,6 +15,7 @@ require_once __DIR__ . '/src/DiamondRecharge.php';
 require_once __DIR__ . '/src/DiamondProviders.php';
 require_once __DIR__ . '/src/GameRewards.php';
 require_once __DIR__ . '/src/ChallengeGame.php';
+require_once __DIR__ . '/src/GameImages.php';
 require_once __DIR__ . '/src/MemoryMatch.php';
 require_once __DIR__ . '/src/PictureJigsaw.php';
 require_once __DIR__ . '/src/VaultCracker.php';

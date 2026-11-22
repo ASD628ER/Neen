@@ -12,7 +12,7 @@ The source directory is [`assets/Picture Jigsaw pic/`](../assets/Picture%20Jigsa
 | `WhatsApp Image 2026-11-07 at 8.32.06 PM.webp` | 314 × 627 |
 | `WhatsApp Image 2026-11-07 at 8.32.37 PM.webp` | 418 × 627 |
 
-[`assets/hero-loot/picture-jigsaw-images.json`](../assets/hero-loot/picture-jigsaw-images.json) lists stable IDs and approved WebP paths. The API validates each path stays inside the approved folder and checks the actual image type/dimensions before including it. Missing or unsupported images fail closed with a service error rather than accepting a replacement or outside URL.
+[`assets/hero-loot/picture-jigsaw-images.json`](../assets/hero-loot/picture-jigsaw-images.json) lists stable IDs and approved WebP paths for the initial library. On first use, the API imports these into the persistent `game_images` table. Owners can manage the live library in the Owner Dashboard's **Game Images** section by adding or replacing WebP, PNG, or JPG files, changing order, and hiding or showing images. Uploads are limited to 5 MB and 8000 × 8000 pixels; Picture Jigsaw supports up to 30 images. Existing files and stable IDs are preserved so saved sessions remain recoverable.
 
 Image choice previews use `object-fit: contain`. The puzzle board retains the chosen image's aspect ratio and divides the full image into a 3 × 3 tile grid; each tile uses the original image as a position-mapped background. This keeps both the wide and portrait character art proportional, without stretching or cropping.
 
@@ -26,7 +26,7 @@ The existing approved policy of three free starts per game per account per Egypt
 
 ## Database and API
 
-The existing installer [`api/migrate.php`](../api/migrate.php) applies the updated [`api/games-schema.sql`](../api/games-schema.sql). It seeds the `picture-jigsaw` catalog row alongside the existing Memory Match row and adds `picture_jigsaw_states`; it reuses `game_catalog`, `user_game_daily_attempts`, and `game_sessions`. The migration creates no new account, wallet, permission, or ledger system.
+The existing installer [`api/migrate.php`](../api/migrate.php) applies the updated [`api/games-schema.sql`](../api/games-schema.sql) and [`api/game-images-schema.sql`](../api/game-images-schema.sql). It seeds the `picture-jigsaw` catalog row alongside the existing Memory Match row and adds `picture_jigsaw_states` and `game_images`; it reuses `game_catalog`, `user_game_daily_attempts`, and `game_sessions`. Uploaded files are stored under `uploads/game-images/`. The migration creates no new account, wallet, permission, or ledger system.
 
 | Method | Path | Access / effect |
 | --- | --- | --- |

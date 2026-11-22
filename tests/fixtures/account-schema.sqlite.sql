@@ -110,6 +110,19 @@ CREATE TABLE site_settings (
     updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     updated_at TEXT NOT NULL
 );
+CREATE TABLE game_images (
+    game_slug TEXT NOT NULL CHECK (game_slug IN ('memory-match', 'picture-jigsaw')),
+    image_key TEXT NOT NULL,
+    source_path TEXT NOT NULL,
+    alt_text TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (game_slug, image_key)
+);
 INSERT INTO site_settings (setting_key, setting_value, updated_at) VALUES
     ('tiktok_url', 'https://www.tiktok.com/@neen_0o', CURRENT_TIMESTAMP),
     ('site_description', 'NEEN — Free Fire content creator. Explore videos, character art, and more.', CURRENT_TIMESTAMP);

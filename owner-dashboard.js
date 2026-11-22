@@ -27,6 +27,13 @@
     games: [],
     siteSettings: {},
     mediaCategory: "all",
+    gameImageGame: "memory-match",
+    gameImages: {},
+    gameImageLimits: {},
+    gameImageMode: "add",
+    gameImageKey: null,
+    gameImageFile: null,
+    gameImagePreviewUrl: "",
     language: readLanguagePreference(),
   };
   const translations = {
@@ -34,7 +41,7 @@
       overview: "Daily Operations", users: "Users", wallet: "Wallet & Transactions", modules: "Connected Modules",
       activity: "Admin Activity", ownerVerified: "LIVE · OWNER VERIFIED", ownerDashboard: "NEEN Owner Command Center",
       dailyOperations: "Daily Operations", playersWallet: "Players & Wallet", allSections: "All Sections",
-      gamesRewardsNav: "Games & Rewards", siteAudit: "Site Settings & Audit Log",
+      gamesRewardsNav: "Games & Rewards", gameImagesNav: "Game Images", siteAudit: "Site Settings & Audit Log",
       eventsOrdersAdmin: "Events & Diamond Orders Admin", backToSite: "Back to Live Site",
       diamondQueue: "DIAMOND ORDER QUEUE", reviewDiamondOrders: "Review diamond orders",
       diamondQueueDesc: "Check JOD packages, Free Fire Player IDs, and UWallet / CliQ transfer references before approving or fulfilling.",
@@ -85,6 +92,20 @@
       gameName: "Game name", gameDescription: "Description", dailyFreeAttempts: "Free attempts per day",
       winReward: "Coins per verified win", gameState: "Publication status", saveGame: "Save game settings",
       confirmGame: "Save these game settings? Changes take effect in the game runtime.",
+      gameImagesTitle: "Game Images", gameImagesDescription: "Manage the image libraries used by Memory Match and Picture Puzzle. Changes are available to players from the live game catalog.",
+      gameImageTabsLabel: "Game image collections", memoryMatchTab: "Memory Match", picturePuzzleTab: "Picture Puzzle",
+      addImage: "Add Image", replaceImage: "Replace Image", moveImageUp: "Move image up", moveImageDown: "Move image down",
+      hideImage: "Hide from players", showImage: "Show to players", imageActive: "Visible to players", imageHidden: "Hidden from players",
+      gameImageUploadGuidance: "WebP, PNG, or JPG · maximum 5 MB · images up to 8000 × 8000 pixels.",
+      imagePreview: "IMAGE PREVIEW", chooseImage: "Choose an image", imageDescription: "Image description",
+      saveImage: "Save Image", gameImagesEmpty: "No images in this collection yet.",
+      gameImagesCount: "{active} visible of {total} images · limit {max}", gameImageLimitReached: "This image collection is full.",
+      gameImageTooLarge: "Choose an image no larger than 5 MB.", gameImageInvalidType: "Choose a valid WebP, PNG, or JPG image.",
+      gameImageInvalidDimensions: "Image dimensions must not exceed 8000 × 8000 pixels.",
+      gameImageSaved: "Image saved. It is now available in the live game catalog.",
+      gameImageVisibilitySaved: "Player visibility updated.", gameImageOrderSaved: "Image order saved.",
+      gameImagePreviewRequired: "Choose an image and review its preview before saving.",
+      imageUnavailable: "Image unavailable — replace it.",
       siteSettings: "Site Settings", tiktokProfile: "TikTok profile URL", siteDescription: "Site description",
       saveSettings: "Save site settings", contentManagement: "Content Management",
       notConnected: "Videos, gallery assets, and page copy remain static files. No CMS editing controls are exposed.",
@@ -177,7 +198,7 @@
       overview: "العمليات اليومية", users: "المستخدمون", wallet: "المحفظة والمعاملات", modules: "الأنظمة المتصلة",
       activity: "سجل نشاط الإدارة", ownerVerified: "مباشر · تم التحقق من المالك", ownerDashboard: "مركز قيادة مالك NEEN",
       dailyOperations: "العمليات اليومية", playersWallet: "اللاعبون والمحفظة", allSections: "كل الأقسام",
-      gamesRewardsNav: "الألعاب والمكافآت", siteAudit: "إعدادات الموقع وسجل النشاط",
+      gamesRewardsNav: "الألعاب والمكافآت", gameImagesNav: "صور الألعاب", siteAudit: "إعدادات الموقع وسجل النشاط",
       eventsOrdersAdmin: "إدارة الفعاليات وطلبات الجواهر", backToSite: "العودة إلى الموقع",
       diamondQueue: "قائمة طلبات الجواهر", reviewDiamondOrders: "مراجعة طلبات الجواهر",
       diamondQueueDesc: "تحقق من باقات JOD ومعرفات لاعبي Free Fire ومراجع تحويل UWallet أو CliQ قبل الاعتماد أو التسليم.",
@@ -228,6 +249,20 @@
       gameName: "اسم اللعبة", gameDescription: "الوصف", dailyFreeAttempts: "المحاولات المجانية يوميًا",
       winReward: "Coins للفوز المتحقق", gameState: "حالة النشر", saveGame: "حفظ إعدادات اللعبة",
       confirmGame: "حفظ إعدادات اللعبة؟ ستطبق التغييرات مباشرة في نظام اللعبة.",
+      gameImagesTitle: "إدارة صور الألعاب", gameImagesDescription: "أدر مكتبات الصور المستخدمة في مطابقة الذاكرة وأحجية الصور. تظهر التغييرات للاعبين من كتالوج اللعبة المباشر.",
+      gameImageTabsLabel: "مكتبات صور الألعاب", memoryMatchTab: "مطابقة الذاكرة", picturePuzzleTab: "أحجية الصور",
+      addImage: "إضافة صورة", replaceImage: "استبدال الصورة", moveImageUp: "تحريك الصورة للأعلى", moveImageDown: "تحريك الصورة للأسفل",
+      hideImage: "إخفاء عن اللاعبين", showImage: "إظهار للاعبين", imageActive: "ظاهرة للاعبين", imageHidden: "مخفية عن اللاعبين",
+      gameImageUploadGuidance: "WebP أو PNG أو JPG · الحد الأقصى 5 MB · أبعاد لا تتجاوز 8000 × 8000 بكسل.",
+      imagePreview: "معاينة الصورة", chooseImage: "اختر صورة", imageDescription: "وصف الصورة",
+      saveImage: "حفظ الصورة", gameImagesEmpty: "لا توجد صور في هذه المجموعة حاليًا.",
+      gameImagesCount: "{active} ظاهرة من أصل {total} صورة · الحد {max}", gameImageLimitReached: "وصلت مجموعة الصور إلى الحد الأقصى.",
+      gameImageTooLarge: "اختر صورة لا يتجاوز حجمها 5 MB.", gameImageInvalidType: "اختر صورة WebP أو PNG أو JPG صالحة.",
+      gameImageInvalidDimensions: "يجب ألا تتجاوز أبعاد الصورة 8000 × 8000 بكسل.",
+      gameImageSaved: "تم حفظ الصورة وأصبحت متاحة في كتالوج اللعبة المباشر.",
+      gameImageVisibilitySaved: "تم تحديث ظهور الصورة للاعبين.", gameImageOrderSaved: "تم حفظ ترتيب الصور.",
+      gameImagePreviewRequired: "اختر صورة وراجع معاينتها قبل الحفظ.",
+      imageUnavailable: "الصورة غير متاحة — استبدلها.",
       siteSettings: "إعدادات الموقع", tiktokProfile: "رابط حساب TikTok", siteDescription: "وصف الموقع",
       saveSettings: "حفظ إعدادات الموقع", contentManagement: "إدارة المحتوى",
       notConnected: "الفيديوهات وملفات المعرض ونصوص الصفحات ملفات ثابتة. لا توجد أدوات تعديل CMS شكلية.",
@@ -464,6 +499,7 @@
     if (activePanels.includes("users")) loadUsers();
     if (activePanels.includes("activity")) loadSiteSettings();
     if (activePanels.includes("modules")) loadGames();
+    if (activePanels.includes("game-images")) loadGameImages();
     if (activePanels.includes("activity")) loadActivity();
   };
 
@@ -1144,6 +1180,339 @@
     }
   };
 
+  const imageCollectionPath = (gameSlug) => `/api/owner/game-images/${gameSlug}`;
+
+  const renderGameImages = () => {
+    const grid = document.querySelector("[data-game-image-grid]");
+    const countLabel = document.querySelector("[data-game-image-count]");
+    const addButton = document.querySelector("[data-game-image-add]");
+    if (!(grid instanceof HTMLElement) || !(countLabel instanceof HTMLElement)) return;
+
+    document.querySelectorAll("[data-game-image-tab]").forEach((tab) => {
+      const selected = tab.dataset.gameImageTab === state.gameImageGame;
+      tab.classList.toggle("is-active", selected);
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    const selectedTab = document.querySelector(`[data-game-image-tab="${state.gameImageGame}"]`);
+    if (selectedTab instanceof HTMLElement) grid.setAttribute("aria-labelledby", selectedTab.id);
+
+    const images = state.gameImages[state.gameImageGame] || [];
+    const maxImages = state.gameImageLimits[state.gameImageGame] || 0;
+    const activeCount = images.filter((image) => image.is_active).length;
+    countLabel.textContent = t("gameImagesCount")
+      .replace("{active}", formatNumber(activeCount))
+      .replace("{total}", formatNumber(images.length))
+      .replace("{max}", formatNumber(maxImages));
+    if (addButton instanceof HTMLButtonElement) {
+      addButton.disabled = images.length >= maxImages;
+      addButton.title = addButton.disabled ? t("gameImageLimitReached") : "";
+    }
+
+    if (images.length === 0) {
+      showState(grid, t("gameImagesEmpty"));
+      return;
+    }
+
+    const cards = images.map((image, index) => {
+      const card = make("article", `owner-game-image-card${image.is_active ? "" : " is-hidden"}`);
+      const preview = make("div", "owner-game-image-thumb");
+      const img = document.createElement("img");
+      img.src = image.src;
+      img.alt = image.alt;
+      img.loading = "lazy";
+      img.decoding = "async";
+      const unavailable = make("span", "owner-game-image-unavailable", t("imageUnavailable"));
+      unavailable.hidden = image.available;
+      img.addEventListener("error", () => {
+        unavailable.hidden = false;
+        preview.classList.add("is-unavailable");
+      }, { once: true });
+      preview.append(
+        img,
+        make("span", `owner-game-image-badge${image.is_active ? "" : " is-hidden"}`, t(image.is_active ? "imageActive" : "imageHidden")),
+        unavailable,
+      );
+      if (!image.available) preview.classList.add("is-unavailable");
+
+      const details = make("div", "owner-game-image-details");
+      details.append(
+        make("strong", "", image.alt),
+        markLtr(make("small", "", image.id)),
+      );
+
+      const actions = make("div", "owner-game-image-actions");
+      const replaceButton = make("button", "admin-secondary-button", t("replaceImage"));
+      replaceButton.type = "button";
+      replaceButton.addEventListener("click", () => openGameImageDialog("replace", image));
+      const visibilityButton = make("button", "admin-secondary-button", t(image.is_active ? "hideImage" : "showImage"));
+      visibilityButton.type = "button";
+      visibilityButton.addEventListener("click", () => void setGameImageVisibility(image));
+      const moveUpButton = make("button", "admin-secondary-button owner-game-image-move", "↑");
+      moveUpButton.type = "button";
+      moveUpButton.title = t("moveImageUp");
+      moveUpButton.setAttribute("aria-label", t("moveImageUp"));
+      moveUpButton.disabled = index === 0;
+      moveUpButton.addEventListener("click", () => void moveGameImage(index, -1));
+      const moveDownButton = make("button", "admin-secondary-button owner-game-image-move", "↓");
+      moveDownButton.type = "button";
+      moveDownButton.title = t("moveImageDown");
+      moveDownButton.setAttribute("aria-label", t("moveImageDown"));
+      moveDownButton.disabled = index === images.length - 1;
+      moveDownButton.addEventListener("click", () => void moveGameImage(index, 1));
+      actions.append(replaceButton, visibilityButton, moveUpButton, moveDownButton);
+      card.append(preview, details, actions);
+      return card;
+    });
+    grid.replaceChildren(...cards);
+  };
+
+  const loadGameImages = async () => {
+    const grid = document.querySelector("[data-game-image-grid]");
+    const status = document.querySelector("[data-game-image-status]");
+    const addButton = document.querySelector("[data-game-image-add]");
+    if (!(grid instanceof HTMLElement) || !(status instanceof HTMLElement)) return;
+    const gameSlug = state.gameImageGame;
+    if (addButton instanceof HTMLButtonElement) addButton.disabled = true;
+    status.textContent = t("loading");
+    try {
+      const result = await apiRequest(imageCollectionPath(gameSlug));
+      state.gameImages[gameSlug] = Array.isArray(result.images) ? result.images : [];
+      state.gameImageLimits[gameSlug] = Number(result.max_images) || 0;
+      if (state.gameImageGame !== gameSlug) return;
+      status.textContent = "";
+      renderGameImages();
+    } catch (error) {
+      if (state.gameImageGame !== gameSlug) return;
+      showState(grid, error instanceof Error ? error.message : t("failed"), true);
+      status.textContent = t("failed");
+    }
+  };
+
+  const openGameImageDialog = (mode, image = null) => {
+    const dialog = document.querySelector("[data-game-image-dialog]");
+    const input = document.querySelector("[data-game-image-file]");
+    const preview = document.querySelector("[data-game-image-preview]");
+    const altInput = document.querySelector("[data-game-image-alt]");
+    const title = document.querySelector("[data-game-image-dialog-title]");
+    const status = document.querySelector("[data-game-image-dialog-status]");
+    const saveButton = document.querySelector("[data-game-image-save]");
+    if (
+      !(dialog instanceof HTMLDialogElement)
+      || !(input instanceof HTMLInputElement)
+      || !(preview instanceof HTMLImageElement)
+      || !(altInput instanceof HTMLInputElement)
+      || !(title instanceof HTMLElement)
+      || !(status instanceof HTMLElement)
+      || !(saveButton instanceof HTMLButtonElement)
+    ) return;
+
+    state.gameImageMode = mode;
+    state.gameImageKey = image?.id ?? null;
+    state.gameImageFile = null;
+    title.textContent = t(mode === "replace" ? "replaceImage" : "addImage");
+    altInput.value = image?.alt ?? "";
+    preview.removeAttribute("src");
+    preview.alt = "";
+    status.textContent = t("gameImagePreviewRequired");
+    saveButton.disabled = true;
+    input.value = "";
+    if (state.gameImagePreviewUrl) URL.revokeObjectURL(state.gameImagePreviewUrl);
+    state.gameImagePreviewUrl = "";
+    dialog.showModal();
+    input.click();
+  };
+
+  const closeGameImageDialog = () => {
+    const dialog = document.querySelector("[data-game-image-dialog]");
+    const input = document.querySelector("[data-game-image-file]");
+    const preview = document.querySelector("[data-game-image-preview]");
+    if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+    if (input instanceof HTMLInputElement) input.value = "";
+    if (preview instanceof HTMLImageElement) preview.removeAttribute("src");
+    if (state.gameImagePreviewUrl) URL.revokeObjectURL(state.gameImagePreviewUrl);
+    state.gameImagePreviewUrl = "";
+    state.gameImageFile = null;
+    state.gameImageKey = null;
+  };
+
+  const updateGameImageSaveState = () => {
+    const saveButton = document.querySelector("[data-game-image-save]");
+    const altInput = document.querySelector("[data-game-image-alt]");
+    if (saveButton instanceof HTMLButtonElement && altInput instanceof HTMLInputElement) {
+      saveButton.disabled = !state.gameImageFile || altInput.value.trim() === "";
+    }
+  };
+
+  const gameImageFileInput = document.querySelector("[data-game-image-file]");
+  if (gameImageFileInput instanceof HTMLInputElement) {
+    gameImageFileInput.addEventListener("change", () => {
+      const file = gameImageFileInput.files?.[0];
+      const status = document.querySelector("[data-game-image-dialog-status]");
+      const preview = document.querySelector("[data-game-image-preview]");
+      const altInput = document.querySelector("[data-game-image-alt]");
+      const saveButton = document.querySelector("[data-game-image-save]");
+      if (
+        !(status instanceof HTMLElement)
+        || !(preview instanceof HTMLImageElement)
+        || !(altInput instanceof HTMLInputElement)
+        || !(saveButton instanceof HTMLButtonElement)
+      ) return;
+      state.gameImageFile = null;
+      saveButton.disabled = true;
+      if (!file) return;
+
+      const extension = file.name.split(".").pop()?.toLowerCase() || "";
+      const allowedTypes = ["image/webp", "image/png", "image/jpeg"];
+      const allowedExtensions = ["webp", "png", "jpg", "jpeg"];
+      if (state.gameImagePreviewUrl) URL.revokeObjectURL(state.gameImagePreviewUrl);
+      state.gameImagePreviewUrl = "";
+      preview.removeAttribute("src");
+      if (file.size > 5 * 1024 * 1024) {
+        status.textContent = t("gameImageTooLarge");
+        return;
+      }
+      if (
+        !allowedExtensions.includes(extension)
+        || (file.type !== "" && !allowedTypes.includes(file.type))
+      ) {
+        status.textContent = t("gameImageInvalidType");
+        return;
+      }
+
+      state.gameImageFile = file;
+      if (state.gameImagePreviewUrl) URL.revokeObjectURL(state.gameImagePreviewUrl);
+      state.gameImagePreviewUrl = URL.createObjectURL(file);
+      preview.alt = file.name;
+      preview.onload = () => {
+        if (preview.naturalWidth > 8000 || preview.naturalHeight > 8000) {
+          state.gameImageFile = null;
+          status.textContent = t("gameImageInvalidDimensions");
+          updateGameImageSaveState();
+          return;
+        }
+        status.textContent = "";
+        updateGameImageSaveState();
+      };
+      preview.onerror = () => {
+        state.gameImageFile = null;
+        status.textContent = t("gameImageInvalidType");
+        updateGameImageSaveState();
+      };
+      preview.src = state.gameImagePreviewUrl;
+      if (state.gameImageMode === "add" && altInput.value.trim() === "") {
+        altInput.value = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
+      }
+    });
+  }
+
+  document.querySelector("[data-game-image-alt]")?.addEventListener("input", updateGameImageSaveState);
+  document.querySelector("[data-game-image-cancel]")?.addEventListener("click", closeGameImageDialog);
+  document.querySelector("[data-game-image-dialog]")?.addEventListener("cancel", () => {
+    window.setTimeout(closeGameImageDialog, 0);
+  });
+  document.querySelector("[data-game-image-add]")?.addEventListener("click", () => openGameImageDialog("add"));
+  document.querySelector("[data-game-image-save]")?.addEventListener("click", async () => {
+    const saveButton = document.querySelector("[data-game-image-save]");
+    const altInput = document.querySelector("[data-game-image-alt]");
+    const status = document.querySelector("[data-game-image-dialog-status]");
+    if (
+      !(saveButton instanceof HTMLButtonElement)
+      || !(altInput instanceof HTMLInputElement)
+      || !(status instanceof HTMLElement)
+      || !state.gameImageFile
+    ) return;
+    saveButton.disabled = true;
+    status.textContent = t("loading");
+    try {
+      const csrf = await apiRequest("/api/auth/csrf");
+      if (typeof csrf.csrf_token !== "string") throw new Error(t("csrfMissing"));
+      const formData = new FormData();
+      formData.append("image", state.gameImageFile);
+      formData.append("alt_text", altInput.value.trim());
+      if (state.gameImageKey) formData.append("image_key", state.gameImageKey);
+      const response = await fetch(imageCollectionPath(state.gameImageGame), {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json", "X-CSRF-Token": csrf.csrf_token },
+        body: formData,
+      });
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(t("invalidResponse"));
+      }
+      if (!response.ok || result.success !== true) {
+        const message = result.errors?.[0]?.message;
+        throw new Error(state.language === "en" && typeof message === "string"
+          ? message
+          : `${t("requestError")} (${response.status})`);
+      }
+      state.gameImages[state.gameImageGame] = result.data.images;
+      state.gameImageLimits[state.gameImageGame] = Number(result.data.max_images) || state.gameImageLimits[state.gameImageGame];
+      closeGameImageDialog();
+      renderGameImages();
+      toast(t("gameImageSaved"));
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : t("failed");
+      saveButton.disabled = false;
+    }
+  });
+
+  document.querySelectorAll("[data-game-image-tab]").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      if (!(tab instanceof HTMLButtonElement) || !tab.dataset.gameImageTab) return;
+      state.gameImageGame = tab.dataset.gameImageTab;
+      loadGameImages();
+    });
+    tab.addEventListener("keydown", (event) => {
+      if (!(event instanceof KeyboardEvent) || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      event.preventDefault();
+      const tabs = [...document.querySelectorAll("[data-game-image-tab]")];
+      const currentIndex = tabs.indexOf(tab);
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const nextTab = tabs[(currentIndex + direction + tabs.length) % tabs.length];
+      if (nextTab instanceof HTMLButtonElement) {
+        nextTab.focus();
+        nextTab.click();
+      }
+    });
+  });
+
+  const setGameImageVisibility = async (image) => {
+    try {
+      const result = await mutate(
+        `${imageCollectionPath(state.gameImageGame)}/${encodeURIComponent(image.id)}`,
+        "PATCH",
+        { is_active: !image.is_active },
+      );
+      state.gameImages[state.gameImageGame] = result.images;
+      renderGameImages();
+      toast(t("gameImageVisibilitySaved"));
+    } catch (error) {
+      toast(error instanceof Error ? error.message : t("failed"), true);
+    }
+  };
+
+  const moveGameImage = async (index, direction) => {
+    const images = [...(state.gameImages[state.gameImageGame] || [])];
+    const target = index + direction;
+    if (target < 0 || target >= images.length) return;
+    [images[index], images[target]] = [images[target], images[index]];
+    try {
+      const result = await mutate(`${imageCollectionPath(state.gameImageGame)}/order`, "PATCH", {
+        image_keys: images.map((image) => image.id),
+      });
+      state.gameImages[state.gameImageGame] = result.images;
+      renderGameImages();
+      toast(t("gameImageOrderSaved"));
+    } catch (error) {
+      toast(error instanceof Error ? error.message : t("failed"), true);
+    }
+  };
+
   const refreshSelected = async () => {
     if (!state.selectedUser) return;
     await selectUser(state.selectedUser.id, "users");
@@ -1332,6 +1701,7 @@
     if (!document.querySelector('[data-panel="activity"]').hidden) loadActivity(state.activityPage);
     if (!document.querySelector('[data-panel="modules"]').hidden) renderGames(state.games);
     if (!document.querySelector('[data-panel="activity"]').hidden) loadSiteSettings();
+    if (!document.querySelector('[data-panel="game-images"]').hidden) renderGameImages();
   };
   if (languageToggle instanceof HTMLButtonElement) {
     languageToggle.addEventListener("click", () => {

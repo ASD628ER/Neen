@@ -29,7 +29,9 @@ final class Api
             $path = rtrim($path, '/') ?: '/';
             $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-            if (in_array($method, ['POST', 'PATCH', 'PUT', 'DELETE'], true) && $path !== '/api/owner/site-media/upload') {
+            $isMultipartUpload = $path === '/api/owner/site-media/upload'
+                || preg_match('#\A/api/owner/game-images/(?:memory-match|picture-jigsaw)\z#', $path) === 1;
+            if (in_array($method, ['POST', 'PATCH', 'PUT', 'DELETE'], true) && !$isMultipartUpload) {
                 $this->body = $this->readJsonBody();
             }
 
@@ -97,6 +99,77 @@ final class Api
                     dirname(__DIR__, 2),
                 );
                 $this->send(true, ['settings' => $settings]);
+            }
+
+            if (preg_match('#\A/api/owner/game-images/(memory-match|picture-jigsaw)(?:/([a-z0-9-]+))?\z#', $path, $match) === 1) {
+                $auth = $this->requireAuth();
+                $this->requireOwner($auth['user_id']);
+                $gameSlug = $match[1];
+                $imageKey = $match[2] ?? null;
+                $gameImages = $this->gameImages();
+
+                if ($method === 'GET' && $imageKey === null) {
+                    $this->send(true, [
+                        'images' => $gameImages->listImages($gameSlug, true),
+                        'max_images' => $gameImages->maxImages($gameSlug),
+                    ]);
+                }
+
+                if ($method === 'POST' && $imageKey === null) {
+                    $this->requireCsrf($auth);
+                    if (!isset($_FILES['image']) || !is_array($_FILES['image'])) {
+                        throw new ApiException('VALIDATION_ERROR', 'An image file is required.', 422);
+                    }
+                    $replaceKey = isset($_POST['image_key']) && is_string($_POST['image_key'])
+                        ? trim($_POST['image_key'])
+                        : null;
+                    $altText = is_string($_POST['alt_text'] ?? null) ? $_POST['alt_text'] : '';
+                    $this->send(true, [
+                        'images' => $gameImages->addOrReplace(
+                            $auth['user_id'],
+                            $gameSlug,
+                            $replaceKey,
+                            $altText,
+                            $_FILES['image'],
+                        ),
+                        'max_images' => $gameImages->maxImages($gameSlug),
+                    ]);
+                }
+
+                if ($method === 'PATCH' && $imageKey === 'order') {
+                    $this->requireCsrf($auth);
+                    $this->requireAllowedFields(['image_keys']);
+                    if (!is_array($this->body['image_keys'] ?? null)) {
+                        throw new ApiException('VALIDATION_ERROR', 'Image order must be a list.', 422);
+                    }
+                    $this->send(true, [
+                        'images' => $gameImages->reorder(
+                            $auth['user_id'],
+                            $gameSlug,
+                            $this->body['image_keys'],
+                        ),
+                        'max_images' => $gameImages->maxImages($gameSlug),
+                    ]);
+                }
+
+                if ($method === 'PATCH' && $imageKey !== null) {
+                    $this->requireCsrf($auth);
+                    $this->requireAllowedFields(['is_active']);
+                    if (!is_bool($this->body['is_active'] ?? null)) {
+                        throw new ApiException('VALIDATION_ERROR', 'Image visibility must be true or false.', 422);
+                    }
+                    $this->send(true, [
+                        'images' => $gameImages->setActive(
+                            $auth['user_id'],
+                            $gameSlug,
+                            $imageKey,
+                            $this->body['is_active'],
+                        ),
+                        'max_images' => $gameImages->maxImages($gameSlug),
+                    ]);
+                }
+
+                throw new ApiException('METHOD_NOT_ALLOWED', 'Method not allowed for this game image collection.', 405);
             }
 
             if (preg_match('#\A/api/owner/games/([1-9][0-9]*)\z#', $path, $match) === 1) {
@@ -2762,7 +2835,7 @@ final class Api
     {
         return new MemoryMatch(
             $this->db,
-            dirname(__DIR__, 2) . '/assets/hero-loot/memory-match-images.json',
+            $this->gameImages(),
             new GameRewards($this->db),
         );
     }
@@ -2771,9 +2844,14 @@ final class Api
     {
         return new PictureJigsaw(
             $this->db,
-            dirname(__DIR__, 2) . '/assets/hero-loot/picture-jigsaw-images.json',
+            $this->gameImages(),
             new GameRewards($this->db),
         );
+    }
+
+    private function gameImages(): GameImages
+    {
+        return new GameImages($this->db, dirname(__DIR__, 2));
     }
 
     private function vaultCracker(): VaultCracker

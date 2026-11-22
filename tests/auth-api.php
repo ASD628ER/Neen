@@ -67,6 +67,65 @@ function request(
     return [$status, json_decode($body, true, 32, JSON_THROW_ON_ERROR), $responseHeaders];
 }
 
+function uploadRequest(
+    string $baseUrl,
+    string $path,
+    array &$cookies,
+    array $fields,
+    string $filePath,
+    string $fileName,
+    string $csrf,
+): array {
+    $fileContents = file_get_contents($filePath);
+    if ($fileContents === false) {
+        throw new RuntimeException('Unable to read game image upload fixture.');
+    }
+    $boundary = 'neen-test-' . bin2hex(random_bytes(12));
+    $body = '';
+    foreach ($fields as $name => $value) {
+        $body .= '--' . $boundary . "\r\n";
+        $body .= 'Content-Disposition: form-data; name="' . $name . '"' . "\r\n\r\n";
+        $body .= (string) $value . "\r\n";
+    }
+    $body .= '--' . $boundary . "\r\n";
+    $body .= 'Content-Disposition: form-data; name="image"; filename="' . $fileName . '"' . "\r\n";
+    $body .= "Content-Type: image/webp\r\n\r\n" . $fileContents . "\r\n";
+    $body .= '--' . $boundary . "--\r\n";
+
+    $headers = [
+        'Accept: application/json',
+        'Content-Type: multipart/form-data; boundary=' . $boundary,
+        'X-CSRF-Token: ' . $csrf,
+    ];
+    if ($cookies !== []) {
+        $headers[] = 'Cookie: ' . implode('; ', array_map(
+            static fn (string $name, string $value): string => $name . '=' . $value,
+            array_keys($cookies),
+            array_values($cookies),
+        ));
+    }
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => implode("\r\n", $headers),
+            'content' => $body,
+            'ignore_errors' => true,
+            'timeout' => 10,
+            'follow_location' => 0,
+        ],
+    ]);
+    $responseBody = file_get_contents($baseUrl . $path, false, $context);
+    if ($responseBody === false) {
+        throw new RuntimeException('Game image upload request failed.');
+    }
+    $responseHeaders = $http_response_header ?? [];
+    preg_match('/\s(\d{3})\s/', $responseHeaders[0] ?? '', $match);
+    return [
+        isset($match[1]) ? (int) $match[1] : 0,
+        json_decode($responseBody, true, 32, JSON_THROW_ON_ERROR),
+    ];
+}
+
 function requestPage(string $baseUrl, string $path, array $cookies): array
 {
     $headers = ['Accept: text/html'];
@@ -173,6 +232,19 @@ function checkResponse(array $response, bool $success, string $message): void
 }
 
 $root = dirname(__DIR__);
+$uploadsDirectory = $root . '/uploads';
+$gameImageUploadRoot = $uploadsDirectory . '/game-images';
+$uploadsDirectoryExisted = is_dir($uploadsDirectory);
+$gameImageUploadRootExisted = is_dir($gameImageUploadRoot);
+$gameImageProtectionFile = $gameImageUploadRoot . '/.htaccess';
+$gameImageProtectionFileExisted = is_file($gameImageProtectionFile);
+$gameImageDirectoriesBefore = [];
+$gameImageFilesBefore = [];
+foreach (['memory-match', 'picture-jigsaw'] as $gameImageSlug) {
+    $gameImageDirectory = $gameImageUploadRoot . '/' . $gameImageSlug;
+    $gameImageDirectoriesBefore[$gameImageSlug] = is_dir($gameImageDirectory);
+    $gameImageFilesBefore[$gameImageSlug] = glob($gameImageDirectory . '/*') ?: [];
+}
 $temporaryDirectory = sys_get_temp_dir() . '/neen-auth-' . bin2hex(random_bytes(6));
 if (!mkdir($temporaryDirectory, 0700)) {
     throw new RuntimeException('Unable to create test directory.');
@@ -3557,7 +3629,11 @@ try {
             . $ownerPageStatus . ', API ' . $ownerApiStatus . ')',
     );
     [$ownerSettingsBeforeStatus] = request($baseUrl, '/api/owner/site-settings', $cookies);
-    assertTrue($ownerSettingsBeforeStatus === 403, 'Administrators without the Owner role cannot read Owner site settings');
+    [$ownerImagesBeforeStatus] = request($baseUrl, '/api/owner/game-images/memory-match', $cookies);
+    assertTrue(
+        $ownerSettingsBeforeStatus === 403 && $ownerImagesBeforeStatus === 403,
+        'Administrators without the Owner role cannot read Owner site settings or game image libraries',
+    );
     [$status, $response] = request($baseUrl, '/api/admin/audit-logs', $cookies);
     assertTrue(
         $status === 200
@@ -3660,8 +3736,11 @@ try {
         && str_contains($ownerPage, 'data-panel="overview"')
         && str_contains($ownerPage, 'data-panel="users"')
         && str_contains($ownerPage, 'data-panel="wallet"')
+        && str_contains($ownerPage, 'data-panel="game-images"')
+        && str_contains($ownerPage, 'data-game-image-tab="memory-match"')
+        && str_contains($ownerPage, 'data-game-image-tab="picture-jigsaw"')
         && str_contains($ownerPage, 'data-panel="activity"'),
-        'A separately assigned Owner role receives the Owner Dashboard page',
+        'A separately assigned Owner role receives the dashboard and dedicated game image manager',
     );
     [$status, $ownerOverview] = request($baseUrl, '/api/owner/dashboard', $cookies);
     assertTrue(
@@ -3687,6 +3766,198 @@ try {
     assertTrue(
         $status === 200 && is_array($memoryGame) && is_array($sunnyIslandGame),
         'Owner can read existing games and the Sunny Island settings record',
+    );
+    [$memoryImagesStatus, $memoryImages] = request($baseUrl, '/api/owner/game-images/memory-match', $cookies);
+    [$puzzleImagesStatus, $puzzleImages] = request($baseUrl, '/api/owner/game-images/picture-jigsaw', $cookies);
+    assertTrue(
+        $memoryImagesStatus === 200
+        && count($memoryImages['data']['images']) === 8
+        && $memoryImages['data']['max_images'] === 12
+        && $puzzleImagesStatus === 200
+        && count($puzzleImages['data']['images']) === 3
+        && $puzzleImages['data']['max_images'] === 30,
+        'Owner image libraries are seeded from every existing game image and expose the configured limits',
+    );
+
+    $gameImageFixture = glob($root . '/assets/hero-loot/Memory Match pic/*.webp')[0] ?? null;
+    assertTrue(is_string($gameImageFixture) && is_file($gameImageFixture), 'A valid WebP game image fixture is available');
+    [$invalidGameImageStatus] = uploadRequest(
+        $baseUrl,
+        '/api/owner/game-images/memory-match',
+        $cookies,
+        ['alt_text' => 'Invalid owner test image'],
+        $root . '/tests/fixtures/account-schema.sqlite.sql',
+        'not-an-image.webp',
+        $csrf,
+    );
+    $oversizedGameImageFixture = tempnam(sys_get_temp_dir(), 'neen-game-image-');
+    if ($oversizedGameImageFixture === false) {
+        throw new RuntimeException('Unable to create an oversized game image test fixture.');
+    }
+    if (file_put_contents($oversizedGameImageFixture, str_repeat('x', 5 * 1024 * 1024 + 1)) === false) {
+        unlink($oversizedGameImageFixture);
+        throw new RuntimeException('Unable to write the oversized game image test fixture.');
+    }
+    try {
+        [$oversizedGameImageStatus] = uploadRequest(
+            $baseUrl,
+            '/api/owner/game-images/memory-match',
+            $cookies,
+            ['alt_text' => 'Oversized owner test image'],
+            $oversizedGameImageFixture,
+            'oversized.webp',
+            $csrf,
+        );
+    } finally {
+        unlink($oversizedGameImageFixture);
+    }
+    assertTrue(
+        $invalidGameImageStatus === 422 && $oversizedGameImageStatus === 422,
+        'Owner image uploads reject invalid image content and files larger than 5 MB',
+    );
+    [$memoryUploadStatus, $memoryUpload] = uploadRequest(
+        $baseUrl,
+        '/api/owner/game-images/memory-match',
+        $cookies,
+        ['alt_text' => 'Owner test memory image'],
+        $gameImageFixture,
+        'owner-memory-image.webp',
+        $csrf,
+    );
+    $memoryAddedImages = $memoryUpload['data']['images'] ?? [];
+    $memoryAddedImage = array_values(array_filter(
+        $memoryAddedImages,
+        static fn (array $image): bool => !in_array(
+            $image['id'],
+            array_column($memoryImages['data']['images']),
+            true,
+        ),
+    ))[0] ?? null;
+    assertTrue(
+        $memoryUploadStatus === 200
+        && is_array($memoryAddedImage)
+        && count($memoryAddedImages) === 9
+        && $memoryAddedImage['is_active'] === true,
+        'Owner can add a validated image to Memory Match without replacing existing images',
+    );
+    $memoryAddedOriginalSource = $memoryAddedImage['src'];
+
+    [$memoryReplaceStatus, $memoryReplaced] = uploadRequest(
+        $baseUrl,
+        '/api/owner/game-images/memory-match',
+        $cookies,
+        ['image_key' => $memoryAddedImage['id'], 'alt_text' => 'Owner test replacement'],
+        $gameImageFixture,
+        'owner-memory-replacement.webp',
+        $csrf,
+    );
+    $memoryReplacedImage = array_values(array_filter(
+        $memoryReplaced['data']['images'] ?? [],
+        static fn (array $image): bool => $image['id'] === $memoryAddedImage['id'],
+    ))[0] ?? null;
+    [$uploadedMemoryStatus, $uploadedMemoryBody] = requestPage(
+        $baseUrl,
+        $memoryReplacedImage['src'] ?? '/',
+        $cookies,
+    );
+    assertTrue(
+        $memoryReplaceStatus === 200
+        && is_array($memoryReplacedImage)
+        && $memoryReplacedImage['alt'] === 'Owner test replacement'
+        && $memoryReplacedImage['src'] !== $memoryAddedOriginalSource
+        && $uploadedMemoryStatus === 200
+        && strlen($uploadedMemoryBody) > 100,
+        'Owner can replace an image in place and the uploaded file is served from the live site',
+    );
+
+    $reversedMemoryKeys = array_reverse(array_column($memoryReplaced['data']['images'], 'id'));
+    [$memoryOrderStatus, $memoryOrder] = request(
+        $baseUrl,
+        '/api/owner/game-images/memory-match/order',
+        $cookies,
+        ['image_keys' => $reversedMemoryKeys],
+        $csrf,
+        'PATCH',
+    );
+    [$memoryCatalogAfterUploadStatus, $memoryCatalogAfterUpload] = request(
+        $baseUrl,
+        '/api/games/memory-match',
+        $cookies,
+    );
+    [$memoryHideStatus, $memoryHidden] = request(
+        $baseUrl,
+        '/api/owner/game-images/memory-match/' . $memoryAddedImage['id'],
+        $cookies,
+        ['is_active' => false],
+        $csrf,
+        'PATCH',
+    );
+    [$memoryCatalogAfterHideStatus, $memoryCatalogAfterHide] = request(
+        $baseUrl,
+        '/api/games/memory-match',
+        $cookies,
+    );
+    assertTrue(
+        $memoryOrderStatus === 200
+        && array_column($memoryOrder['data']['images'], 'id') === $reversedMemoryKeys
+        && $memoryCatalogAfterUploadStatus === 200
+        && count($memoryCatalogAfterUpload['data']['game']['images']) === 9
+        && $memoryCatalogAfterUpload['data']['game']['pairs_total'] === 9
+        && $memoryCatalogAfterUpload['data']['game']['cards_total'] === 18
+        && $memoryHideStatus === 200
+        && count($memoryHidden['data']['images']) === 9
+        && $memoryCatalogAfterHideStatus === 200
+        && count($memoryCatalogAfterHide['data']['game']['images']) === 8,
+        'Memory Match order, live pair/card counts, and player visibility follow the owner image library',
+    );
+
+    [$puzzleUploadStatus, $puzzleUpload] = uploadRequest(
+        $baseUrl,
+        '/api/owner/game-images/picture-jigsaw',
+        $cookies,
+        ['alt_text' => 'Owner test puzzle image'],
+        $gameImageFixture,
+        'owner-puzzle-image.webp',
+        $csrf,
+    );
+    $puzzleAddedImages = $puzzleUpload['data']['images'] ?? [];
+    $puzzleAddedImage = array_values(array_filter(
+        $puzzleAddedImages,
+        static fn (array $image): bool => !in_array(
+            $image['id'],
+            array_column($puzzleImages['data']['images']),
+            true,
+        ),
+    ))[0] ?? null;
+    [$puzzleCatalogAfterUploadStatus, $puzzleCatalogAfterUpload] = request(
+        $baseUrl,
+        '/api/games/picture-jigsaw',
+        $cookies,
+    );
+    [$puzzleHideStatus, $puzzleHidden] = request(
+        $baseUrl,
+        '/api/owner/game-images/picture-jigsaw/' . ($puzzleAddedImage['id'] ?? 'missing'),
+        $cookies,
+        ['is_active' => false],
+        $csrf,
+        'PATCH',
+    );
+    [$puzzleCatalogAfterHideStatus, $puzzleCatalogAfterHide] = request(
+        $baseUrl,
+        '/api/games/picture-jigsaw',
+        $cookies,
+    );
+    assertTrue(
+        $puzzleUploadStatus === 200
+        && is_array($puzzleAddedImage)
+        && count($puzzleCatalogAfterUpload['data']['game']['images']) === 4
+        && $puzzleCatalogAfterUpload['data']['game']['board_size'] === 3
+        && $puzzleCatalogAfterUpload['data']['game']['piece_count'] === 9
+        && $puzzleHideStatus === 200
+        && count($puzzleHidden['data']['images']) === 4
+        && $puzzleCatalogAfterHideStatus === 200
+        && count($puzzleCatalogAfterHide['data']['game']['images']) === 3,
+        'Picture Puzzle uses the dynamically managed image choices while preserving its 3-by-3 board',
     );
     [$sunnyOwnerUpdateStatus] = request(
         $baseUrl,
@@ -4114,4 +4385,28 @@ try {
         unlink($file);
     }
     rmdir($temporaryDirectory);
+    foreach (['memory-match', 'picture-jigsaw'] as $gameImageSlug) {
+        $gameImageDirectory = $gameImageUploadRoot . '/' . $gameImageSlug;
+        foreach (glob($gameImageDirectory . '/*') ?: [] as $file) {
+            if (!in_array($file, $gameImageFilesBefore[$gameImageSlug], true) && is_file($file)) {
+                unlink($file);
+            }
+        }
+        if (
+            !$gameImageDirectoriesBefore[$gameImageSlug]
+            && is_dir($gameImageDirectory)
+            && glob($gameImageDirectory . '/*') === []
+        ) {
+            rmdir($gameImageDirectory);
+        }
+    }
+    if (!$gameImageProtectionFileExisted && is_file($gameImageProtectionFile)) {
+        unlink($gameImageProtectionFile);
+    }
+    if (!$gameImageUploadRootExisted && is_dir($gameImageUploadRoot) && glob($gameImageUploadRoot . '/*') === []) {
+        rmdir($gameImageUploadRoot);
+    }
+    if (!$uploadsDirectoryExisted && is_dir($uploadsDirectory) && glob($uploadsDirectory . '/*') === []) {
+        rmdir($uploadsDirectory);
+    }
 }

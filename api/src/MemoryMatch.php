@@ -9,14 +9,14 @@ final class MemoryMatch
 
     public function __construct(
         private readonly PDO $db,
-        private readonly string $manifestPath,
+        private readonly GameImages $gameImages,
         private readonly GameRewards $rewards,
     ) {
     }
 
     public function catalog(): array
     {
-        $images = $this->images();
+        $images = $this->gameImages->gameCatalog(self::GAME_SLUG);
         $game = $this->gameSettings();
         return [
             'slug' => self::GAME_SLUG,
@@ -38,7 +38,7 @@ final class MemoryMatch
             throw new ApiException('VALIDATION_ERROR', 'A valid idempotency key is required.', 422);
         }
 
-        $images = $this->images();
+        $images = $this->gameImages->gameCatalog(self::GAME_SLUG);
         if (count($images) < 2) {
             throw new ApiException('GAME_ASSETS_UNAVAILABLE', 'The game needs at least two valid images.', 503);
         }
@@ -338,74 +338,6 @@ final class MemoryMatch
         });
     }
 
-    private function images(): array
-    {
-        $manifest = file_get_contents($this->manifestPath);
-        if ($manifest === false) {
-            throw new ApiException('GAME_ASSETS_UNAVAILABLE', 'The game image list is unavailable.', 503);
-        }
-
-        try {
-            $records = json_decode($manifest, true, 16, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            throw new ApiException('GAME_ASSETS_UNAVAILABLE', 'The game image list is invalid.', 503);
-        }
-        if (!is_array($records)) {
-            throw new ApiException('GAME_ASSETS_UNAVAILABLE', 'The game image list is invalid.', 503);
-        }
-
-        $projectRoot = dirname(__DIR__, 2);
-        $assetRoot = realpath($projectRoot . '/assets/hero-loot/Memory Match pic');
-        if ($assetRoot === false) {
-            throw new ApiException('GAME_ASSETS_UNAVAILABLE', 'The game image folder is unavailable.', 503);
-        }
-
-        $images = [];
-        $seen = [];
-        foreach ($records as $record) {
-            if (
-                !is_array($record)
-                || !isset($record['id'], $record['src'], $record['alt'])
-                || !is_string($record['id'])
-                || !preg_match('/\A[a-z0-9-]{1,60}\z/', $record['id'])
-                || isset($seen[$record['id']])
-                || !is_string($record['src'])
-                || !str_starts_with($record['src'], 'assets/hero-loot/Memory Match pic/')
-                || !is_string($record['alt'])
-                || $record['alt'] === ''
-                || strlen($record['alt']) > 200
-            ) {
-                continue;
-            }
-
-            $path = realpath($projectRoot . '/' . $record['src']);
-            if (
-                $path === false
-                || !str_starts_with($path, $assetRoot . DIRECTORY_SEPARATOR)
-                || !is_file($path)
-            ) {
-                continue;
-            }
-            $imageInfo = @getimagesize($path);
-            if (
-                $imageInfo === false
-                || !in_array($imageInfo['mime'] ?? '', ['image/jpeg', 'image/png', 'image/webp'], true)
-            ) {
-                continue;
-            }
-
-            $relativeSource = substr($path, strlen($projectRoot) + 1);
-            $source = implode('/', array_map('rawurlencode', explode('/', $relativeSource)));
-            $images[] = ['id' => $record['id'], 'alt' => $record['alt'], 'src' => '/' . $source];
-            $seen[$record['id']] = true;
-        }
-
-        if ($images === []) {
-            throw new ApiException('GAME_ASSETS_UNAVAILABLE', 'No supported game images are available.', 503);
-        }
-        return $images;
-    }
-
     private function activeGame(): array
     {
         $statement = $this->db->prepare(
@@ -603,7 +535,10 @@ final class MemoryMatch
         }
         $stored = $this->storedState((int) $session['id']);
         $imageMap = [];
-        foreach ($this->images() as $image) {
+        foreach ($this->gameImages->listImages(self::GAME_SLUG, true) as $image) {
+            if (!$image['available']) {
+                continue;
+            }
             $imageMap[$image['id']] = $image;
         }
 
