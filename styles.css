@@ -476,7 +476,7 @@ button:focus-visible {
     var(--bg);
 }
 
-.loot-drop-video {
+.loot-drop-background {
   position: absolute;
   z-index: 0;
   inset: 0;
@@ -536,7 +536,7 @@ button:focus-visible {
       inset 0 0 0 1px var(--border);
   }
 
-  .loot-drop-video {
+  .loot-drop-background {
     opacity: 0.58;
   }
 
@@ -6288,7 +6288,7 @@ body.home-page {
   box-shadow: var(--soft-shadow);
 }
 
-.home-page .loot-drop-video {
+.home-page .loot-drop-background {
   z-index: 0;
   opacity: 0.13;
   filter: saturate(0.7);
@@ -7701,7 +7701,7 @@ body.home-page {
   box-shadow: var(--soft-shadow);
 }
 
-.home-page .loot-drop-video {
+.home-page .loot-drop-background {
   opacity: 0.08;
   filter: saturate(0.7);
 }
@@ -8050,7 +8050,7 @@ html[dir="rtl"] .home-page .home-hero .hero-art img {
   pointer-events: none;
 }
 
-.home-page .loot-drop-video {
+.home-page .loot-drop-background {
   position: absolute;
   z-index: 0;
   inset: 0;

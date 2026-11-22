@@ -51,10 +51,7 @@
 (async () => {
   const canvas = document.querySelector("[data-loot-scene]");
   const lootSection = canvas?.closest("[data-loot-section]");
-  const backgroundVideo = lootSection?.querySelector("[data-loot-video]");
   if (!(canvas instanceof HTMLCanvasElement) || !lootSection) return;
-  const handleVideoError = () => { lootSection.dataset.videoState = "fallback"; };
-  const handleVideoReady = () => { lootSection.dataset.videoState = "ready"; };
 
   const scriptElement = document.currentScript || document.querySelector('script[src*="hero-loot.js"]');
   const assetBaseUrl = scriptElement?.src || window.location.href;
@@ -1139,17 +1136,6 @@
       return;
     }
 
-    if (backgroundVideo) {
-      backgroundVideo.addEventListener("error", handleVideoError);
-      backgroundVideo.addEventListener("loadeddata", handleVideoReady);
-      const videoSource = backgroundVideo.dataset.videoSrc;
-      if (videoSource) {
-        backgroundVideo.src = new URL(videoSource, assetBaseUrl).href;
-        backgroundVideo.load();
-        backgroundVideo.play().catch(handleVideoError);
-      }
-    }
-
     initializationStage = "sprite asset loading and texture upload";
     const loadedTextures = Object.fromEntries(await Promise.all(
       Object.entries(spriteSources)
@@ -1310,13 +1296,6 @@
         canvas.removeEventListener("keydown", handleCanvasKeyDown);
         motionPreference.removeEventListener("change", handleMotionChange);
         canvas.removeEventListener("webglcontextlost", handleContextLost);
-        if (backgroundVideo) {
-          backgroundVideo.pause();
-          backgroundVideo.removeEventListener("error", handleVideoError);
-          backgroundVideo.removeEventListener("loadeddata", handleVideoReady);
-          backgroundVideo.removeAttribute("src");
-          backgroundVideo.load();
-        }
         [
           diamondBuffer,
           spriteBuffer,
