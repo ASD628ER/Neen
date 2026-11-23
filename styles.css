@@ -8715,8 +8715,8 @@ html[dir="rtl"] .home-page .loot-drop-heading {
 
   .home-page .home-hero .hero-actions .button {
     width: min(90%, 380px);
-    height: 155px;
-    min-height: 155px;
+    height: 52px;
+    min-height: 52px;
     flex: 0 0 auto;
     border-radius: 999px;
     box-sizing: border-box;
