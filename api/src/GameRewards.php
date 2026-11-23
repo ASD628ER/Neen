@@ -23,6 +23,7 @@ final class GameRewards
         $lock = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' ? ' FOR UPDATE' : '';
         $statement = $this->db->prepare(
             'SELECT s.id, s.user_id, s.status, s.expires_at, s.completed_at, s.matched_pairs,
+                    s.move_count, s.score, s.started_at,
                     g.slug, g.status AS game_status, g.reward_amount_coins
              FROM game_sessions s
              JOIN game_catalog g ON g.id = s.game_id
@@ -50,7 +51,12 @@ final class GameRewards
         } elseif ($gameSlug === 'picture-jigsaw') {
             $this->verifyPictureJigsaw($sessionId);
         } elseif ($gameSlug === 'vault_cracker') {
-            $this->verifyVaultCracker($sessionId);
+            $this->verifyTargetRush(
+                $sessionId,
+                (int) $session['score'],
+                (int) $session['move_count'],
+                (string) $session['started_at'],
+            );
         } elseif ($gameSlug === 'loot_sequence') {
             $this->verifyLootSequence($sessionId);
         } else {
@@ -184,7 +190,7 @@ final class GameRewards
         }
     }
 
-    private function verifyVaultCracker(int $sessionId): void
+    private function verifyTargetRush(int $sessionId, int $storedScore, int $moveCount, string $sessionStartedAt): void
     {
         $statement = $this->db->prepare(
             'SELECT secret_json, guesses_json FROM vault_cracker_states WHERE session_id = :session_id'
@@ -193,43 +199,95 @@ final class GameRewards
         $statement->execute(['session_id' => $sessionId]);
         $state = $statement->fetch();
         if ($state === false) {
-            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Vault Cracker state is unavailable.', 409);
+            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Target Rush state is unavailable.', 409);
         }
         try {
-            $secret = json_decode($state['secret_json'], true, 16, JSON_THROW_ON_ERROR);
-            $guesses = json_decode($state['guesses_json'], true, 16, JSON_THROW_ON_ERROR);
+            $targets = json_decode($state['secret_json'], true, 16, JSON_THROW_ON_ERROR);
+            $run = json_decode($state['guesses_json'], true, 16, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
-            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Vault Cracker state is invalid.', 409);
+            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Target Rush state is invalid.', 409);
         }
+        $nowMs = (int) floor(microtime(true) * 1000);
         if (
-            !is_array($secret)
-            || !array_is_list($secret)
-            || count($secret) !== 4
-            || count(array_filter($secret, 'is_string')) !== 4
-            || count(array_unique($secret)) !== 4
-            || !is_array($guesses)
-            || !array_is_list($guesses)
-            || count($guesses) > 6
+            !is_array($targets)
+            || !array_is_list($targets)
+            || count($targets) !== 38
+            || !is_array($run)
+            || array_is_list($run)
+            || !is_int($run['started_at_ms'] ?? null)
+            || !is_int($run['finished_at_ms'] ?? null)
+            || !is_array($run['hits'] ?? null)
+            || !array_is_list($run['hits'])
+            || count($run['hits']) !== $moveCount
+            || $run['finished_at_ms'] - $run['started_at_ms'] < 30_000
+            || $run['finished_at_ms'] > $nowMs + 1_000
+            || $run['started_at_ms'] < ((int) strtotime($sessionStartedAt) * 1000)
+            || $run['started_at_ms'] > $nowMs
         ) {
-            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Vault Cracker code or guesses are invalid.', 409);
+            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Target Rush run timing or state is invalid.', 409);
         }
-        $won = false;
-        foreach ($guesses as $guess) {
+
+        $tokens = [];
+        foreach ($targets as $target) {
             if (
-                !is_array($guess)
-                || !isset($guess['icons'], $guess['exact_matches'])
-                || !is_array($guess['icons'])
-                || !array_is_list($guess['icons'])
-                || count($guess['icons']) !== 4
+                !is_array($target)
+                || !is_string($target['token'] ?? null)
+                || !preg_match('/\A[a-f0-9]{32}\z/', $target['token'])
+                || !in_array($target['type'] ?? null, ['normal', 'gold', 'danger'], true)
+                || !in_array($target['position'] ?? null, [
+                    'upper-left', 'upper-right', 'middle-left', 'middle-right', 'lower-left', 'lower-right',
+                ], true)
+                || isset($tokens[$target['token']])
             ) {
-                throw new ApiException('GAME_WIN_NOT_VERIFIED', 'A Vault Cracker guess is invalid.', 409);
+                throw new ApiException('GAME_WIN_NOT_VERIFIED', 'A Target Rush target is invalid.', 409);
             }
-            if ($guess['icons'] === $secret && $guess['exact_matches'] === 4) {
-                $won = true;
-            }
+            $tokens[$target['token']] = true;
         }
-        if (!$won) {
-            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Vault Cracker code was not solved.', 409);
+
+        $score = 0;
+        $combo = 0;
+        $previousIndex = null;
+        $seenIndexes = [];
+        foreach ($run['hits'] as $hit) {
+            if (!is_array($hit)) {
+                throw new ApiException('GAME_WIN_NOT_VERIFIED', 'A Target Rush hit is invalid.', 409);
+            }
+            $index = $hit['index'] ?? null;
+            if (
+                !is_int($index)
+                || $index < 0
+                || $index >= count($targets)
+                || !isset($targets[$index])
+                || ($hit['token'] ?? null) !== $targets[$index]['token']
+                || ($hit['type'] ?? null) !== $targets[$index]['type']
+                || !is_int($hit['received_at_ms'] ?? null)
+                || isset($seenIndexes[$index])
+                || ($previousIndex !== null && $index <= $previousIndex)
+                || $hit['received_at_ms'] < $run['started_at_ms'] + ($index * 800)
+                || $hit['received_at_ms'] >= min(
+                    $run['started_at_ms'] + (($index + 1) * 800),
+                    $run['started_at_ms'] + 30_000,
+                )
+            ) {
+                throw new ApiException('GAME_WIN_NOT_VERIFIED', 'A Target Rush hit is invalid or outside its server time slot.', 409);
+            }
+            $seenIndexes[$index] = true;
+            if ($previousIndex !== null && $index !== $previousIndex + 1) {
+                $combo = 0;
+            }
+            if ($targets[$index]['type'] === 'danger') {
+                $score = max(0, $score - 15);
+                $combo = 0;
+            } else {
+                $combo++;
+                $bonus = min(5, $combo - 1);
+                $score += $targets[$index]['type'] === 'gold' ? 20 + ($bonus * 3) : 10 + ($bonus * 2);
+            }
+            $previousIndex = $index;
+        }
+
+        if ($score < 200 || $storedScore !== $score) {
+            throw new ApiException('GAME_WIN_NOT_VERIFIED', 'The Target Rush score does not meet the verified win goal.', 409);
         }
     }
 

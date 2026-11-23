@@ -637,7 +637,7 @@ try {
     );
     $database = new PDO('sqlite:' . $databasePath);
     $storedSessionHash = $database->query(
-        'SELECT session_token_hash FROM user_sessions WHERE user_id = ' . $userId,
+        'SELECT session_token_hash FROM user_sessions WHERE user_id = ' . $userId . ' ORDER BY id DESC LIMIT 1',
     )->fetchColumn();
     $storedPasswordHash = $database->query(
         'SELECT password_hash FROM users WHERE id = ' . $userId,
@@ -645,7 +645,7 @@ try {
     assertTrue(
         $storedSessionHash === hash('sha256', $cookies['neen_session'])
         && $storedSessionHash !== $cookies['neen_session'],
-        'The session token is stored only as a hash',
+        'The latest session token is stored only as a hash',
     );
     assertTrue(
         is_string($storedPasswordHash)
@@ -1863,124 +1863,280 @@ try {
         'The combined game rewards remain in Earned Coins and preserve the Purchased Coins balance',
     );
 
-    [$status, $vaultCatalogResponse] = request($baseUrl, '/api/games/vault-cracker', $cookies);
-    $vaultCatalog = $vaultCatalogResponse['data']['game'] ?? [];
+    [$status, $targetCatalogResponse] = request($baseUrl, '/api/games/target-rush', $cookies);
+    $targetCatalog = $targetCatalogResponse['data']['game'] ?? [];
     assertTrue(
         $status === 200
-        && $vaultCatalog['slug'] === 'vault_cracker'
-        && count($vaultCatalog['icons']) === 6
-        && $vaultCatalog['free_attempts_per_day'] === 3
-        && $vaultCatalog['reward_amount_coins'] === 50,
-        'Vault Cracker exposes its six approved icons and server-configured reward limits',
+        && $targetCatalog['slug'] === 'target-rush'
+        && $targetCatalog['round_duration_seconds'] === 30
+        && $targetCatalog['score_to_win'] === 200
+        && $targetCatalog['free_attempts_per_day'] === 3
+        && $targetCatalog['reward_amount_coins'] === 50,
+        'Target Rush exposes its 30-second round and current server-configured daily and reward settings',
     );
-    [$status] = request($baseUrl, '/api/games/vault-cracker/sessions/current', $anonymousCookies);
-    assertTrue($status === 401, 'Anonymous visitors cannot load a user-linked Vault Cracker session');
-    $vaultPage = file_get_contents($baseUrl . '/vault-cracker.html');
+    [$status] = request($baseUrl, '/api/games/target-rush/sessions/current', $anonymousCookies);
+    assertTrue($status === 401, 'Anonymous visitors cannot load a user-linked Target Rush session');
+    $targetPage = file_get_contents($baseUrl . '/target-rush.html');
     assertTrue(
-        is_string($vaultPage) && str_contains($vaultPage, 'data-vault-submit'),
-        'The Vault Cracker page is served with playable controls',
+        is_string($targetPage)
+        && str_contains($targetPage, 'NEEN_Target_Rush_01_Start_Screen.png')
+        && str_contains($targetPage, 'NEEN_Target_Rush_02_Gameplay.png')
+        && str_contains($targetPage, 'NEEN_Target_Rush_03_Victory_Results.png')
+        && str_contains($targetPage, 'NEEN_Target_Rush_04_Game_Over.png')
+        && str_contains($targetPage, 'data-rush-target'),
+        'Target Rush serves all four approved screen images with interactive target controls',
     );
-    [$status, $vaultStarted] = request(
+    foreach ([
+        'NEEN_Target_Rush_01_Start_Screen.png',
+        'NEEN_Target_Rush_02_Gameplay.png',
+        'NEEN_Target_Rush_03_Victory_Results.png',
+        'NEEN_Target_Rush_04_Game_Over.png',
+    ] as $targetImage) {
+        $imageBytes = file_get_contents($baseUrl . '/Target%20Rush/' . $targetImage);
+        assertTrue(
+            $imageBytes !== false && getimagesizefromstring($imageBytes) !== false,
+            'Target Rush serves each approved screen image as an actual image asset',
+        );
+    }
+    [$status, $targetStarted] = request(
         $baseUrl,
-        '/api/games/vault-cracker/sessions',
+        '/api/games/target-rush/sessions',
         $cookies,
-        ['idempotency_key' => 'vault-cracker-start-001'],
+        ['idempotency_key' => 'target-rush-start-001'],
         $csrf,
         'POST',
     );
-    $vaultSession = $vaultStarted['data']['session'] ?? [];
+    $targetSession = $targetStarted['data']['session'] ?? [];
     assertTrue(
         $status === 201
-        && $vaultStarted['data']['attempts_remaining_today'] === 2
-        && !array_key_exists('secret', $vaultSession)
-        && !array_key_exists('secret_code', $vaultSession),
-        'Vault Cracker starts privately on the server and consumes one Cairo-day attempt',
+        && $targetStarted['data']['attempts_remaining_today'] === 2
+        && $targetSession['status'] === 'started'
+        && $targetSession['time_remaining_ms'] <= 30_000
+        && $targetSession['time_remaining_ms'] > 0
+        && $targetSession['score'] === 0
+        && is_array($targetSession['active_target'])
+        && !array_key_exists('targets', $targetSession),
+        'Target Rush starts with a private server-generated target stream and consumes one Cairo-day attempt',
     );
-    $vaultSessionId = $vaultSession['id'];
-    $vaultDb = new PDO('sqlite:' . $databasePath);
-    $vaultSecretStatement = $vaultDb->prepare(
-        'SELECT secret_json FROM vault_cracker_states WHERE session_id = :session_id',
-    );
-    $vaultSecretStatement->execute(['session_id' => $vaultSessionId]);
-    $vaultSecret = json_decode((string) $vaultSecretStatement->fetchColumn(), true, 16, JSON_THROW_ON_ERROR);
-    unset($vaultSecretStatement, $vaultDb);
-    [$invalidVaultGuessStatus] = request(
+    $targetSessionId = $targetSession['id'];
+    [$tamperedHitStatus] = request(
         $baseUrl,
-        '/api/games/vault-cracker/sessions/' . $vaultSessionId . '/guess',
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
         $cookies,
-        ['guess' => ['weapon-ak47', 'weapon-ak47', 'loot-crate', 'backpack']],
+        ['token' => $targetSession['active_target']['token'], 'score' => 999999, 'time' => 0],
         $csrf,
         'POST',
     );
-    assertTrue($invalidVaultGuessStatus === 422, 'Vault Cracker rejects repeated icons in a guess');
-    [$status, $vaultWin] = request(
+    assertTrue($tamperedHitStatus === 422, 'Target Rush rejects client-supplied scores and times');
+    [$invalidTokenStatus] = request(
         $baseUrl,
-        '/api/games/vault-cracker/sessions/' . $vaultSessionId . '/guess',
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
         $cookies,
-        ['guess' => $vaultSecret],
+        ['token' => str_repeat('0', 32)],
+        $csrf,
+        'POST',
+    );
+    assertTrue($invalidTokenStatus === 409, 'Target Rush rejects targets that are not active in the server time slot');
+    [$earlyFinishStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/finish',
+        $cookies,
+        [],
+        $csrf,
+        'POST',
+    );
+    assertTrue($earlyFinishStatus === 409, 'Target Rush cannot finish or earn a reward before its full 30-second round');
+
+    $targetDb = new PDO('sqlite:' . $databasePath);
+    $targetStateQuery = $targetDb->prepare(
+        'SELECT secret_json, guesses_json FROM vault_cracker_states WHERE session_id = :session_id',
+    );
+    $targetStateQuery->execute(['session_id' => $targetSessionId]);
+    $targetState = $targetStateQuery->fetch(PDO::FETCH_ASSOC);
+    $targetList = json_decode((string) $targetState['secret_json'], true, 16, JSON_THROW_ON_ERROR);
+    $runState = json_decode((string) $targetState['guesses_json'], true, 16, JSON_THROW_ON_ERROR);
+    unset($targetStateQuery);
+    $safeIndexes = [];
+    foreach ($targetList as $index => $target) {
+        if ($target['type'] !== 'danger') {
+            $safeIndexes[] = $index;
+        }
+    }
+    $targetStartMs = (int) floor(microtime(true) * 1000) - 31_000;
+    foreach ($safeIndexes as $index) {
+        $runState['started_at_ms'] = (int) floor(microtime(true) * 1000) - ($index * 800) - 100;
+        foreach ($runState['hits'] as &$existingHit) {
+            $existingHit['received_at_ms'] = $runState['started_at_ms'] + ($existingHit['index'] * 800) + 100;
+        }
+        unset($existingHit);
+        $targetDb->prepare(
+            'UPDATE vault_cracker_states SET guesses_json = :state WHERE session_id = :session_id',
+        )->execute([
+            'state' => json_encode($runState, JSON_THROW_ON_ERROR),
+            'session_id' => $targetSessionId,
+        ]);
+        [$hitStatus, $hitResponse] = request(
+            $baseUrl,
+            '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
+            $cookies,
+            ['token' => $targetList[$index]['token']],
+            $csrf,
+            'POST',
+        );
+        assertTrue(
+            $hitStatus === 200
+            && $hitResponse['data']['session']['hits'] === count($runState['hits']) + 1,
+            'Target Rush records each active hit using server-owned target type and timing',
+        );
+        $runState = json_decode((string) $targetDb->query(
+            'SELECT guesses_json FROM vault_cracker_states WHERE session_id = ' . (int) $targetSessionId,
+        )->fetchColumn(), true, 16, JSON_THROW_ON_ERROR);
+        $runState['started_at_ms'] = $targetStartMs;
+        foreach ($runState['hits'] as &$hit) {
+            $hit['received_at_ms'] = $targetStartMs + ($hit['index'] * 800) + 100;
+        }
+        unset($hit);
+        $targetDb->prepare(
+            'UPDATE vault_cracker_states SET guesses_json = :state WHERE session_id = :session_id',
+        )->execute([
+            'state' => json_encode($runState, JSON_THROW_ON_ERROR),
+            'session_id' => $targetSessionId,
+        ]);
+        $targetDb->prepare('UPDATE game_sessions SET started_at = :started_at WHERE id = :id')->execute([
+            'started_at' => gmdate('Y-m-d H:i:s', intdiv($targetStartMs, 1000)),
+            'id' => $targetSessionId,
+        ]);
+    }
+    unset($targetDb);
+    [$status, $targetWin] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/finish',
+        $cookies,
+        [],
         $csrf,
         'POST',
     );
     assertTrue(
         $status === 200
-        && $vaultWin['data']['session']['status'] === 'completed'
-        && $vaultWin['data']['reward']['amount'] === 50,
-        'A correct Vault Cracker code completes the session and credits its server-verified reward',
+        && $targetWin['data']['session']['status'] === 'completed'
+        && $targetWin['data']['session']['score'] >= $targetCatalog['score_to_win']
+        && $targetWin['data']['reward']['amount'] === 50,
+        'A full server-timed Target Rush round credits the configured reward only after its verified score goal',
     );
-    $vaultLedgerDb = new PDO('sqlite:' . $databasePath);
-    $vaultLedgerCount = $vaultLedgerDb->prepare(
+    [$targetReplayStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/finish',
+        $cookies,
+        [],
+        $csrf,
+        'POST',
+    );
+    [$targetClaimStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/reward',
+        $cookies,
+        [],
+        $csrf,
+        'POST',
+    );
+    $targetLedgerDb = new PDO('sqlite:' . $databasePath);
+    $targetLedgerCount = $targetLedgerDb->prepare(
         "SELECT COUNT(*) FROM coin_ledger
          WHERE user_id = :user_id AND source = 'game_reward' AND reference_type = 'game_session'
            AND reference_id = :session_id",
     );
-    $vaultLedgerCount->execute(['user_id' => $userId, 'session_id' => $vaultSessionId]);
-    assertTrue((int) $vaultLedgerCount->fetchColumn() === 1, 'Vault Cracker writes one immutable reward ledger entry');
-    unset($vaultLedgerCount, $vaultLedgerDb);
+    $targetLedgerCount->execute(['user_id' => $userId, 'session_id' => $targetSessionId]);
+    assertTrue(
+        $targetReplayStatus === 409
+        && $targetClaimStatus === 404
+        && (int) $targetLedgerCount->fetchColumn() === 1,
+        'Target Rush blocks repeated reward issuance and leaves exactly one immutable ledger entry',
+    );
+    unset($targetLedgerCount, $targetLedgerDb);
 
-    $failVaultSession = static function (string $key) use ($baseUrl, $databasePath, &$cookies, &$csrf): void {
-        [$startStatus, $started] = request(
-            $baseUrl,
-            '/api/games/vault-cracker/sessions',
-            $cookies,
-            ['idempotency_key' => $key],
-            $csrf,
-            'POST',
-        );
-        assertTrue($startStatus === 201, 'A remaining Vault Cracker daily attempt starts');
-        $sessionId = $started['data']['session']['id'];
-        $secretDb = new PDO('sqlite:' . $databasePath);
-        $secretQuery = $secretDb->prepare('SELECT secret_json FROM vault_cracker_states WHERE session_id = :session_id');
-        $secretQuery->execute(['session_id' => $sessionId]);
-        $secret = json_decode((string) $secretQuery->fetchColumn(), true, 16, JSON_THROW_ON_ERROR);
-        unset($secretQuery, $secretDb);
-        $wrongGuess = array_merge(array_slice($secret, 1), [$secret[0]]);
-        for ($guessNumber = 1; $guessNumber <= 6; $guessNumber++) {
-            [$status, $response] = request(
-                $baseUrl,
-                '/api/games/vault-cracker/sessions/' . $sessionId . '/guess',
-                $cookies,
-                ['guess' => $wrongGuess],
-                $csrf,
-                'POST',
-            );
-            assertTrue(
-                $status === 200
-                && $response['data']['session']['status'] === ($guessNumber === 6 ? 'failed' : 'in_progress'),
-                'Vault Cracker enforces its six-guess limit and records an unsolved attempt',
-            );
-        }
-    };
-    $failVaultSession('vault-cracker-start-002');
-    $failVaultSession('vault-cracker-start-003');
-    [$vaultLimitStatus] = request(
+    [$targetFailStartStatus, $targetFailStart] = request(
         $baseUrl,
-        '/api/games/vault-cracker/sessions',
+        '/api/games/target-rush/sessions',
         $cookies,
-        ['idempotency_key' => 'vault-cracker-start-004'],
+        ['idempotency_key' => 'target-rush-start-002'],
         $csrf,
         'POST',
     );
-    assertTrue($vaultLimitStatus === 429, 'Vault Cracker enforces the three-start Cairo-day limit');
+    $targetFailId = $targetFailStart['data']['session']['id'];
+    $targetFailDb = new PDO('sqlite:' . $databasePath);
+    $targetFailStateQuery = $targetFailDb->prepare(
+        'SELECT guesses_json FROM vault_cracker_states WHERE session_id = :session_id',
+    );
+    $targetFailStateQuery->execute(['session_id' => $targetFailId]);
+    $targetFailState = json_decode((string) $targetFailStateQuery->fetchColumn(), true, 16, JSON_THROW_ON_ERROR);
+    $targetFailState['started_at_ms'] = (int) floor(microtime(true) * 1000) - 31_000;
+    $targetFailDb->prepare(
+        'UPDATE vault_cracker_states SET guesses_json = :state WHERE session_id = :session_id',
+    )->execute([
+        'state' => json_encode($targetFailState, JSON_THROW_ON_ERROR),
+        'session_id' => $targetFailId,
+    ]);
+    unset($targetFailStateQuery);
+    unset($targetFailDb);
+    [$targetFailStatus, $targetFail] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetFailId . '/finish',
+        $cookies,
+        [],
+        $csrf,
+        'POST',
+    );
+    assertTrue(
+        $targetFailStartStatus === 201
+        && $targetFailStatus === 200
+        && $targetFail['data']['session']['status'] === 'failed'
+        && $targetFail['data']['reward'] === null,
+        'An expired round below the score goal closes without issuing a reward',
+    );
+    [$thirdTargetStartStatus, $thirdTargetStart] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions',
+        $cookies,
+        ['idempotency_key' => 'target-rush-start-003'],
+        $csrf,
+        'POST',
+    );
+    $thirdTargetId = $thirdTargetStart['data']['session']['id'];
+    $thirdTargetDb = new PDO('sqlite:' . $databasePath);
+    $thirdTargetStateQuery = $thirdTargetDb->prepare(
+        'SELECT guesses_json FROM vault_cracker_states WHERE session_id = :session_id',
+    );
+    $thirdTargetStateQuery->execute(['session_id' => $thirdTargetId]);
+    $thirdTargetState = json_decode((string) $thirdTargetStateQuery->fetchColumn(), true, 16, JSON_THROW_ON_ERROR);
+    $thirdTargetState['started_at_ms'] = (int) floor(microtime(true) * 1000) - 31_000;
+    $thirdTargetDb->prepare(
+        'UPDATE vault_cracker_states SET guesses_json = :state WHERE session_id = :session_id',
+    )->execute([
+        'state' => json_encode($thirdTargetState, JSON_THROW_ON_ERROR),
+        'session_id' => $thirdTargetId,
+    ]);
+    unset($thirdTargetStateQuery, $thirdTargetDb);
+    [$thirdTargetFinishStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $thirdTargetId . '/finish',
+        $cookies,
+        [],
+        $csrf,
+        'POST',
+    );
+    assertTrue(
+        $thirdTargetStartStatus === 201 && $thirdTargetFinishStatus === 200,
+        'The third Target Rush attempt is available and can end without a reward',
+    );
+    [$targetLimitStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions',
+        $cookies,
+        ['idempotency_key' => 'target-rush-start-004'],
+        $csrf,
+        'POST',
+    );
+    assertTrue($targetLimitStatus === 429, 'Target Rush enforces the existing three-start Cairo-day limit');
 
     [$status, $sequenceCatalogResponse] = request($baseUrl, '/api/games/loot-sequence', $cookies);
     $sequenceCatalog = $sequenceCatalogResponse['data']['game'] ?? [];
@@ -2686,14 +2842,6 @@ try {
         && !array_key_exists('email', $gameWinner),
         'The public leaderboard returns current Coins, verified wins, attendance data, and no email fields',
     );
-    [$vaultClaimStatus] = request(
-        $baseUrl,
-        '/api/games/vault-cracker/sessions/' . $vaultSessionId . '/reward',
-        $cookies,
-        [],
-        $csrf,
-        'POST',
-    );
     [$sequenceClaimStatus] = request(
         $baseUrl,
         '/api/games/loot-sequence/sessions/' . $sequenceSessionId . '/reward',
@@ -2703,13 +2851,16 @@ try {
         'POST',
     );
     assertTrue(
-        $vaultClaimStatus === 404 && $sequenceClaimStatus === 404,
+        $targetClaimStatus === 404 && $sequenceClaimStatus === 404,
         'Completed game rewards are credited only by server-verified game completion, never a client claim request',
     );
     $challengesPage = file_get_contents($baseUrl . '/events-challenges.html');
     assertTrue(
         is_string($challengesPage)
-        && str_contains($challengesPage, 'vault-cracker.html')
+        && str_contains($challengesPage, 'target-rush.html')
+        && str_contains($challengesPage, 'data-challenge="target-rush"')
+        && !str_contains($challengesPage, 'vault-cracker.html')
+        && !str_contains($challengesPage, 'Vault Cracker')
         && str_contains($challengesPage, 'loot-sequence.html')
         && str_contains($challengesPage, 'sunny-island.html')
         && str_contains($challengesPage, 'data-challenge="sunny_island"')
@@ -4317,7 +4468,7 @@ try {
     $attendanceDb->exec('DROP TRIGGER test_fail_attendance');
 
     echo "PASS: account security and Coins ledger; Rewards, Community Events, Diamond Recharge; admin permissions and CSRF; "
-        . "Memory Match, Picture Jigsaw, Vault Cracker, Loot Sequence, Sunny Island, leaderboards, daily rewards, and attendance cycles.\n";
+        . "Memory Match, Picture Jigsaw, Target Rush, Loot Sequence, Sunny Island, leaderboards, daily rewards, and attendance cycles.\n";
 } finally {
     proc_terminate($process);
     proc_close($process);

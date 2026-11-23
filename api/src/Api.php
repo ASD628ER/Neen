@@ -428,46 +428,72 @@ final class Api
 
             if ($path === '/api/games/vault-cracker') {
                 $this->expectMethod($method, 'GET');
-                $this->send(true, ['game' => $this->vaultCracker()->catalog()]);
+                $this->send(true, ['game' => $this->targetRush()->catalog()]);
             }
 
             if ($path === '/api/games/vault-cracker/sessions/current') {
                 $this->expectMethod($method, 'GET');
                 $auth = $this->requireAuth();
-                $game = $this->vaultCracker();
+                $game = $this->targetRush();
                 $this->send(true, [
                     'session' => $game->current($auth['user_id']),
                     'attempts_remaining_today' => $game->attemptsRemainingToday($auth['user_id']),
                 ]);
             }
 
-            if ($path === '/api/games/vault-cracker/sessions') {
+            if ($path === '/api/games/target-rush') {
+                $this->expectMethod($method, 'GET');
+                $this->send(true, ['game' => $this->targetRush()->catalog()]);
+            }
+
+            if ($path === '/api/games/target-rush/sessions/current') {
+                $this->expectMethod($method, 'GET');
+                $auth = $this->requireAuth();
+                $game = $this->targetRush();
+                $this->send(true, [
+                    'session' => $game->current($auth['user_id']),
+                    'attempts_remaining_today' => $game->attemptsRemainingToday($auth['user_id']),
+                ]);
+            }
+
+            if ($path === '/api/games/target-rush/sessions') {
                 $this->expectMethod($method, 'POST');
                 $auth = $this->requireAuth();
                 $this->requireCsrf($auth);
                 $this->requireAllowedFields(['idempotency_key']);
-                $result = $this->vaultCracker()->start(
+                $result = $this->targetRush()->start(
                     $auth['user_id'],
                     $this->idempotencyKey($this->body['idempotency_key'] ?? null),
                 );
                 $this->send(true, $result, [], $result['created'] ? 201 : 200);
             }
 
-            if (preg_match('#\A/api/games/vault-cracker/sessions/([1-9][0-9]*)\z#', $path, $match) === 1) {
+            if (preg_match('#\A/api/games/target-rush/sessions/([1-9][0-9]*)\z#', $path, $match) === 1) {
                 $this->expectMethod($method, 'GET');
                 $auth = $this->requireAuth();
-                $this->send(true, ['session' => $this->vaultCracker()->getState($auth['user_id'], (int) $match[1])]);
+                $this->send(true, ['session' => $this->targetRush()->getState($auth['user_id'], (int) $match[1])]);
             }
 
-            if (preg_match('#\A/api/games/vault-cracker/sessions/([1-9][0-9]*)/guess\z#', $path, $match) === 1) {
+            if (preg_match('#\A/api/games/target-rush/sessions/([1-9][0-9]*)/hit\z#', $path, $match) === 1) {
                 $this->expectMethod($method, 'POST');
                 $auth = $this->requireAuth();
                 $this->requireCsrf($auth);
-                $this->requireAllowedFields(['guess']);
-                $this->send(true, $this->vaultCracker()->submitGuess(
+                $this->requireAllowedFields(['token']);
+                $this->send(true, $this->targetRush()->hit(
                     $auth['user_id'],
                     (int) $match[1],
-                    $this->body['guess'] ?? null,
+                    $this->body['token'] ?? null,
+                ));
+            }
+
+            if (preg_match('#\A/api/games/target-rush/sessions/([1-9][0-9]*)/finish\z#', $path, $match) === 1) {
+                $this->expectMethod($method, 'POST');
+                $auth = $this->requireAuth();
+                $this->requireCsrf($auth);
+                $this->requireAllowedFields([]);
+                $this->send(true, $this->targetRush()->finishRound(
+                    $auth['user_id'],
+                    (int) $match[1],
                 ));
             }
 
@@ -2956,9 +2982,9 @@ final class Api
         );
     }
 
-    private function vaultCracker(): VaultCracker
+    private function targetRush(): TargetRush
     {
-        return new VaultCracker($this->db, new GameRewards($this->db));
+        return new TargetRush($this->db, new GameRewards($this->db));
     }
 
     private function lootSequence(): LootSequence

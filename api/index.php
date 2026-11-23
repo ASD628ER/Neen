@@ -17,7 +17,7 @@ require_once __DIR__ . '/src/GameRewards.php';
 require_once __DIR__ . '/src/ChallengeGame.php';
 require_once __DIR__ . '/src/MemoryMatch.php';
 require_once __DIR__ . '/src/PictureJigsaw.php';
-require_once __DIR__ . '/src/VaultCracker.php';
+require_once __DIR__ . '/src/TargetRush.php';
 require_once __DIR__ . '/src/LootSequence.php';
 require_once __DIR__ . '/src/SunnyIsland.php';
 require_once __DIR__ . '/src/OwnerDashboard.php';

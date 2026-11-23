@@ -98,7 +98,7 @@
     await Promise.all([
       loadGame("memory-match", "/api/games/memory-match", "/api/games/memory-match/sessions/current", "Memory Match"),
       loadGame("picture-jigsaw", "/api/games/picture-jigsaw", "/api/games/picture-jigsaw/sessions/current", "Picture Jigsaw"),
-      loadGame("vault_cracker", "/api/games/vault-cracker", "/api/games/vault-cracker/sessions/current", "Vault Cracker"),
+      loadGame("target-rush", "/api/games/target-rush", "/api/games/target-rush/sessions/current", "Target Rush"),
       loadGame("loot_sequence", "/api/games/loot-sequence", "/api/games/loot-sequence/sessions/current", "Loot Sequence"),
       loadSunnyIsland(),
     ]);
