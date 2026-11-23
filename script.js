@@ -180,7 +180,6 @@ const arabicTranslations = {
   "My goal is to create content that combines entertainment, creativity, and value, giving Free Fire fans a unique experience while keeping them informed about everything new in the game.": "هدفي تقديم محتوى يجمع بين الترفيه والإبداع والفائدة، ويمنح محبي فري فاير تجربة مميزة ويبقيهم على اطلاع بكل جديد في اللعبة.",
   "NEEN": "NEEN",
   "NEEN / IN FRAME": "نين / في لقطة",
-  "NEEN COMMUNITY": "مجتمع نين",
   "NEEN Events Hub — Community": "مركز فعاليات نين — المجتمع",
   "NEEN will never need your Free Fire password or one-time verification code to prepare a top-up request.": "لن تحتاج نين أبدًا إلى كلمة مرور فري فاير أو رمز تحقق لمرة واحدة لإعداد طلب شحن.",
   "NEEN — Free Fire Content Creator": "نين — صانعة محتوى فري فاير",
@@ -209,17 +208,13 @@ const arabicTranslations = {
   "ONE GAME.": "لعبة واحدة.",
   "One game. Endless ideas. All NEEN.": "لعبة واحدة، أفكار بلا حدود، وكلها بطابع نين.",
   "Only payment methods registered for the selected country are shown.": "تظهر فقط طرق الدفع المسجلة للبلد المحدد.",
-  "Only your in-game player ID. Never enter your password or verification code.": "أدخل معرّف اللاعب داخل اللعبة فقط. لا تدخل كلمة المرور أو رمز التحقق.",
   "Open the character gallery ↗": "افتح معرض الشخصيات ↗",
   "Open this video on TikTok ↗": "افتح هذا الفيديو على تيك توك ↗",
   "Optional · after payment setup": "اختياري · بعد إعداد الدفع",
   "Order reference:": "رقم الطلب:",
-  "ORDER.": "الطلب.",
   "OUR NEXT MOVE.": "خطوتنا التالية.",
-  "Package": "الباقة",
   "Payment identifier": "معرّف الدفع",
   "PAYMENT INSTRUCTIONS": "تعليمات الدفع",
-  "Payment method": "طريقة الدفع",
   "Payment review": "مراجعة الدفع",
   "PAYMENT REVIEW.": "مراجعة الدفع.",
   "PAYMENT SETUP": "إعداد الدفع",
@@ -229,10 +224,8 @@ const arabicTranslations = {
   "PLAY TOGETHER.": "العبوا معًا.",
   "PLAY. WATCH.": "العب. شاهد.",
   "PLAYBOOK.": "المجتمع.",
-  "Player ID / UID": "معرّف اللاعب / UID",
   "Player profile": "الملف الشخصي للاعب",
   "Player Profile — NEEN Events Hub": "الملف الشخصي للاعب — مركز فعاليات نين",
-  "PLAYER SAFETY": "سلامة اللاعبين",
   "Point totals cannot be edited in the browser and are not linked to diamond purchases.": "لا يمكن تعديل مجموع النقاط من المتصفح، وهي غير مرتبطة بشراء الماس.",
   "Points and reward availability": "النقاط وتوفر المكافآت",
   "Polls & votes": "الاستطلاعات والتصويت",
@@ -254,11 +247,7 @@ const arabicTranslations = {
   "Real payment": "بيانات دفع حقيقية",
   "details required.": "مطلوبة.",
   "REQUEST RECEIVED — PENDING REVIEW": "تم استلام الطلب — بانتظار المراجعة",
-  "Required": "مطلوب",
   "RESTRICTED OPERATIONS": "عمليات مقيّدة",
-  "Return home": "العودة إلى الرئيسية",
-  "Review order": "مراجعة الطلب",
-  "REVIEW YOUR": "راجع",
   "Reviewed outcomes and delivery": "النتائج ومتابعة التسليم بعد المراجعة",
   "Rewards shop": "متجر المكافآت",
   "Rewards — NEEN Events Hub": "المكافآت — مركز فعاليات نين",
@@ -307,7 +296,6 @@ const arabicTranslations = {
   "TIKTOK · NEEN_0O": "تيك توك · NEEN_0O",
   "Top-up information": "معلومات شحن الماس",
   "TOP-UP REQUEST": "طلب شحن",
-  "TOP-UP.": "شحن الماس.",
   "TRANSFER INSTRUCTIONS": "تعليمات التحويل",
   "Transfer reference": "رقم التحويل المرجعي",
   "Transfer steps": "خطوات التحويل",
@@ -351,7 +339,6 @@ const arabicTranslations = {
   "Payment review instructions are not configured.": "لم تُعدّ تعليمات مراجعة الدفع.",
   "No approved diamond packages or prices are configured. Orders cannot be submitted.": "لم تُعدّ باقات ماس أو أسعار معتمدة. لا يمكن إرسال الطلبات.",
   "SERVER CONFIGURED": "الخادم مُعدّ",
-  "Not provided": "غير مذكور",
   "Not required": "غير مطلوب",
   "Choose a configured payment method and approved package, complete all required fields, and connect the secure order service before continuing.": "اختر طريقة دفع مُعدة وباقة معتمدة، وأكمل الحقول المطلوبة، ثم اربط خدمة الطلبات الآمنة للمتابعة.",
   "The order cannot be sent because a configured payment method, approved package, valid details, or secure order service is missing.": "تعذّر إرسال الطلب لغياب طريقة دفع مُعدة أو باقة معتمدة أو بيانات صحيحة أو خدمة طلبات آمنة.",
@@ -410,7 +397,6 @@ const arabicTranslations = {
   "Close navigation": "إغلاق القائمة",
   "Switch to Arabic": "التبديل إلى العربية",
   "Switch to English": "التبديل إلى الإنجليزية",
-  "Enter your numeric player ID": "أدخل معرّف اللاعب الرقمي",
   "Enter a player ID containing 6 to 20 digits.": "أدخل معرّف لاعب مكوّنًا من 6 إلى 20 رقمًا.",
   "+ country code and number": "+ رمز البلد ورقم الهاتف",
   "Enter a valid phone number, including country code.": "أدخل رقم هاتف صحيحًا مع رمز البلد.",
@@ -432,7 +418,6 @@ const arabicTranslations = {
   "Directory": "الدليل",
   "Details": "التفاصيل",
   "Votes": "التصويت",
-  "Challenges": "التحديات",
   "Ideas": "الأفكار",
   "Profile": "الملف الشخصي",
   "Rankings": "الترتيب",
@@ -483,7 +468,6 @@ const arabicTranslations = {
   "When an event is published, its official details and participation rules will be shown here.": "عند نشر فعالية، ستظهر تفاصيلها الرسمية وقواعد المشاركة هنا.",
   "Your NEEN Events Hub profile, points, and participation history.": "ملفك الشخصي ونقاطك وسجل مشاركتك في مركز فعاليات نين.",
   "قيد الإعداد · Setup pending": "قيد الإعداد · الإعداد معلّق",
-  "FREE FIRE": "فري فاير",
   "CREATOR": "صانعة المحتوى",
   "@NEEN_0O • FREE FIRE CREATOR": "@NEEN_0O • صانعة محتوى فري فاير",
   "Watch Free Fire highlights, play five server-validated Coin games, claim Cairo-time daily rewards, and request JOD Diamond top-ups.": "شاهد أبرز لحظات فري فاير، والعب خمس ألعاب كوين يتحقق منها الخادم، واحصل على المكافآت اليومية بتوقيت القاهرة، واطلب شحن الماس بالدينار الأردني.",
@@ -540,7 +524,6 @@ const arabicTranslations = {
   "SERVER-CREDITED REWARD": "مكافأة تُضاف عبر الخادم",
   "Homepage Reward": "مكافأة الصفحة الرئيسية",
   "Reward:": "المكافأة:",
-  "Earned Coins": "كوينز مكتسبة",
   "Wallet balance:": "رصيد المحفظة:",
   "Coins": "كوينز",
   "Homepage wallet reward": "مكافأة محفظة الصفحة الرئيسية",
@@ -949,9 +932,29 @@ const SITE_MEDIA_SELECTORS = {
   media_gallery_18: [".gallery-grid figure:nth-child(18) img", ".gallery-card:nth-child(18) img"],
 };
 
+const isSafeSiteMediaUrl = (value) => {
+  if (typeof value !== "string" || value.trim() !== value || value === "" || value.includes("\\")) {
+    return false;
+  }
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(value.split(/[?#]/, 1)[0]);
+  } catch {
+    return false;
+  }
+  if (decodedPath.includes("..") || /[\u0000-\u001f]/.test(decodedPath)) return false;
+  if (/^uploads\/site\/[A-Za-z0-9._/-]+$/.test(value)) return true;
+  if (!value.startsWith("/")) return false;
+  try {
+    return new URL(value, window.location.origin).origin === window.location.origin;
+  } catch {
+    return false;
+  }
+};
+
 const applyPublicSiteMedia = (settings) => {
   const defaultAvatarUrl = settings.media_default_avatar?.value;
-  if (typeof defaultAvatarUrl === "string" && /^(uploads\/site\/|https:\/\/)/.test(defaultAvatarUrl)) {
+  if (isSafeSiteMediaUrl(defaultAvatarUrl)) {
     document.querySelectorAll('img[src="icone/snoop.webp"]').forEach((img) => {
       img.setAttribute("src", defaultAvatarUrl);
     });
@@ -962,7 +965,7 @@ const applyPublicSiteMedia = (settings) => {
 
   for (const [key, selectors] of Object.entries(SITE_MEDIA_SELECTORS)) {
     const url = settings[key]?.value;
-    if (typeof url !== "string" || !/^(uploads\/site\/|https:\/\/)/.test(url)) continue;
+    if (!isSafeSiteMediaUrl(url)) continue;
     selectors.forEach((selector) => {
       try {
         document.querySelectorAll(selector).forEach((img) => {
@@ -1202,26 +1205,13 @@ if (headerWordmark) {
   const lockup = document.createElement("span");
   lockup.className = `${headerWordmark.className} wordmark-lockup`;
 
-  const homePrefix = document.createElement("a");
-  homePrefix.href = homeUrl;
-  homePrefix.setAttribute("aria-label", "NEEN home");
-  homePrefix.textContent = "NE";
-
-  const adminEntry = document.createElement("a");
-  adminEntry.href = "events-admin.html";
-  adminEntry.className = "wordmark-admin-entry";
-  adminEntry.setAttribute("aria-label", "NEEN staff page");
-  adminEntry.textContent = "E";
-
-  const homeTail = document.createElement("a");
-  homeTail.href = homeUrl;
-  homeTail.setAttribute("aria-label", "NEEN home");
-  homeTail.append(document.createTextNode("N"));
+  const homeLink = document.createElement("a");
+  homeLink.href = homeUrl;
+  homeLink.setAttribute("aria-label", "NEEN home");
+  homeLink.textContent = "NEEN";
   const dot = document.createElement("span");
   dot.textContent = ".";
-  homeTail.append(dot);
-
-  lockup.replaceChildren(homePrefix, adminEntry, homeTail);
+  lockup.replaceChildren(homeLink, dot);
   headerWordmark.replaceWith(lockup);
 }
 
@@ -1880,14 +1870,28 @@ if (diamondForm instanceof HTMLFormElement) {
     };
 
     let response;
+    let csrfPrepared = false;
     try {
+      const csrfResponse = await fetch("/api/auth/csrf", {
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      const csrfResult = await csrfResponse.json();
+      const csrfToken = csrfResult.data?.csrf_token;
+      if (!csrfResponse.ok || csrfResult.success !== true || typeof csrfToken !== "string") {
+        throw new Error("Could not prepare a secure order request.");
+      }
+      csrfPrepared = true;
       response = await fetch(endpoint, {
         method: "POST",
         credentials: "same-origin",
         redirect: "error",
         headers: {
+          Accept: "application/json",
           "Content-Type": "application/json",
           "Idempotency-Key": globalThis.crypto.randomUUID(),
+          "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify(request),
       });
@@ -1895,7 +1899,9 @@ if (diamondForm instanceof HTMLFormElement) {
       console.error("Could not reach the configured top-up order service.", error);
       showError(
         reviewError,
-        "The order service could not be reached. No receipt was confirmed; check with the service operator before retrying.",
+        csrfPrepared
+          ? "The order service could not be reached. No receipt was confirmed; check with the service operator before retrying."
+          : "A secure order request could not be prepared. No order was sent.",
       );
       inFlight = false;
       updateAvailability();
@@ -2080,13 +2086,41 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
       if (!response.ok || result.success !== true) throw new Error("Ticker unavailable");
       const data = result.data;
       const settings = data.settings;
+      const defaultColors = {
+        background: "#17132f",
+        text: "#fff8fc",
+        sender: "#f3a3c6",
+        separator: "#c8c8ed",
+        glow: "#d65f96",
+      };
+      const isSafeColor = (value) => {
+        if (typeof value !== "string") return false;
+        if (/^#(?:[\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i.test(value)) return true;
+        const match = value.match(/^(rgb|rgba|hsl|hsla)\(([^()]*)\)$/i);
+        if (!match) return false;
+        const components = match[2].split(",");
+        const functionName = match[1].toLowerCase();
+        const hasAlpha = functionName.endsWith("a");
+        return components.length === (hasAlpha ? 4 : 3)
+          && components.every((component) => /^[+-]?(?:\d+(?:\.\d+)?|\.\d+)%?$/.test(component.trim()));
+      };
+      const colors = Object.fromEntries(
+        Object.entries(defaultColors).map(([key, fallback]) => [
+          key,
+          isSafeColor(settings.colors?.[key]) ? settings.colors[key] : fallback,
+        ]),
+      );
+      const requestedSpeed = Number(settings.speed_seconds);
+      const speed = Number.isFinite(requestedSpeed) && requestedSpeed >= 10 && requestedSpeed <= 180
+        ? requestedSpeed
+        : 55;
       section.hidden = false;
-      section.style.setProperty("--neen-news-background", settings.colors.background);
-      section.style.setProperty("--neen-news-text", settings.colors.text);
-      section.style.setProperty("--neen-news-sender", settings.colors.sender);
-      section.style.setProperty("--neen-news-separator", settings.colors.separator);
-      section.style.setProperty("--neen-news-glow", settings.colors.glow);
-      section.style.setProperty("--neen-news-speed", `${settings.speed_seconds}s`);
+      section.style.setProperty("--neen-news-background", colors.background);
+      section.style.setProperty("--neen-news-text", colors.text);
+      section.style.setProperty("--neen-news-sender", colors.sender);
+      section.style.setProperty("--neen-news-separator", colors.separator);
+      section.style.setProperty("--neen-news-glow", colors.glow);
+      section.style.setProperty("--neen-news-speed", `${speed}s`);
       if (settings.enabled) {
         section.hidden = false;
         renderTrack(data.messages);

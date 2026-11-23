@@ -155,16 +155,6 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-.wordmark-lockup > .wordmark-admin-entry {
-  position: relative;
-}
-
-.wordmark-admin-entry::before {
-  position: absolute;
-  inset: -0.35em 0;
-  content: "";
-}
-
 .feed-mark span,
 .about-mark span {
   color: var(--pink);

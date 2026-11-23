@@ -36,6 +36,7 @@
       activity: "Admin Activity", ownerVerified: "LIVE · OWNER VERIFIED", ownerDashboard: "NEEN Owner Command Center",
       dailyOperations: "Daily Operations", playersWallet: "Players & Wallet", allSections: "All Sections",
       gamesRewardsNav: "Games & Rewards", siteAudit: "Site Settings & Audit Log",
+      newsTickerNav: "News Ticker",
       eventsOrdersAdmin: "Events & Diamond Orders Admin", backToSite: "Back to Live Site",
       diamondQueue: "DIAMOND ORDER QUEUE", reviewDiamondOrders: "Review diamond orders",
       diamondQueueDesc: "Check JOD packages, Free Fire Player IDs, and UWallet / CliQ transfer references before approving or fulfilling.",
@@ -88,6 +89,17 @@
       confirmGame: "Save these game settings? Changes take effect in the game runtime.",
       siteSettings: "Site Settings", tiktokProfile: "TikTok profile URL", siteDescription: "Site description",
       saveSettings: "Save site settings", contentManagement: "Content Management",
+      mediaBadgeCustom: "Custom image", mediaBadgeOriginal: "Original image",
+      mediaChangeBtn: "Replace image", mediaResetBtn: "Reset image",
+      confirmResetMedia: "Restore this image to its original artwork?",
+      confirmDeleteNews: "Delete this news ticker message?",
+      mediaUploadingBtn: "Uploading…", mediaCardDesc: "Replace the images and artwork used across the live site.",
+      openMediaManager: "Open media manager ↗", mediaManagerEyebrow: "VISUAL ASSETS & MEDIA",
+      siteMediaTitle: "Site Images & Media Manager", mediaCatAll: "All Sections (43)",
+      mediaCatHero: "Hero & Pages", mediaCatGames: "Games Artwork",
+      mediaCatVideos: "Video Posters", mediaCatGallery: "Character Gallery (18)",
+      siteMediaDesc: "Upload a WebP, PNG, or JPG image up to 5 MB to replace live artwork, or reset it to the original.",
+      mediaTooLarge: "Image must be 5 MB or less.",
       notConnected: "Videos, gallery assets, and page copy remain static files. No CMS editing controls are exposed.",
       requiresIntegration: "Requires a media workflow and public-page integration",
       totalUsers: "Total users", newUsers: "New accounts (30d)", activeUsers: "Active users (30d)",
@@ -176,9 +188,9 @@
     },
     ar: {
       overview: "العمليات اليومية", users: "المستخدمون", wallet: "المحفظة والمعاملات", modules: "الأنظمة المتصلة",
-      activity: "سجل نشاط الإدارة", ownerVerified: "مباشر · تم التحقق من المالك", ownerDashboard: "مركز قيادة مالك NEEN", newsTickerNav: "إدارة شريط الأخبار",
+      activity: "سجل نشاط الإدارة", ownerVerified: "مباشر · تم التحقق من المالك", ownerDashboard: "مركز قيادة مالك NEEN",
       dailyOperations: "العمليات اليومية", playersWallet: "اللاعبون والمحفظة", allSections: "كل الأقسام",
-      gamesRewardsNav: "الألعاب والمكافآت", siteAudit: "إعدادات الموقع وسجل النشاط",
+      gamesRewardsNav: "الألعاب والمكافآت", siteAudit: "إعدادات الموقع وسجل النشاط", newsTickerNav: "إدارة شريط الأخبار",
       eventsOrdersAdmin: "إدارة الفعاليات وطلبات الجواهر", backToSite: "العودة إلى الموقع",
       diamondQueue: "قائمة طلبات الجواهر", reviewDiamondOrders: "مراجعة طلبات الجواهر",
       diamondQueueDesc: "تحقق من باقات JOD ومعرفات لاعبي Free Fire ومراجع تحويل UWallet أو CliQ قبل الاعتماد أو التسليم.",
@@ -231,12 +243,23 @@
       confirmGame: "حفظ إعدادات اللعبة؟ ستطبق التغييرات مباشرة في نظام اللعبة.",
       siteSettings: "إعدادات الموقع", tiktokProfile: "رابط حساب TikTok", siteDescription: "وصف الموقع",
       saveSettings: "حفظ إعدادات الموقع", contentManagement: "إدارة المحتوى",
+      mediaBadgeCustom: "صورة مخصصة", mediaBadgeOriginal: "الصورة الأصلية",
+      mediaChangeBtn: "استبدال الصورة", mediaResetBtn: "إعادة الصورة الأصلية",
+      confirmResetMedia: "هل تريد استعادة الصورة الأصلية؟",
+      confirmDeleteNews: "هل تريد حذف رسالة شريط الأخبار؟",
+      mediaUploadingBtn: "جارٍ الرفع…", mediaCardDesc: "استبدل الصور والرسومات المستخدمة في الموقع مباشرة.",
+      openMediaManager: "فتح مدير الوسائط ↗", mediaManagerEyebrow: "الصور والوسائط",
+      siteMediaTitle: "مدير صور ووسائط الموقع", mediaCatAll: "كل الأقسام (43)",
+      mediaCatHero: "الواجهة والصفحات", mediaCatGames: "صور الألعاب",
+      mediaCatVideos: "أغلفة الفيديو", mediaCatGallery: "معرض الشخصيات (18)",
+      siteMediaDesc: "ارفع صورة WebP أو PNG أو JPG بحجم أقصى 5 MB لاستبدال صورة بالموقع، أو استعد الصورة الأصلية.",
+      mediaTooLarge: "يجب ألا يتجاوز حجم الصورة 5 MB.",
       notConnected: "الفيديوهات وملفات المعرض ونصوص الصفحات ملفات ثابتة. لا توجد أدوات تعديل CMS شكلية.",
       requiresIntegration: "يتطلب نظامًا للوسائط وربط الصفحات العامة",
       totalUsers: "إجمالي المستخدمين", newUsers: "حسابات جديدة (30 يومًا)", activeUsers: "مستخدمون نشطون (30 يومًا)",
       totalCoins: "Coins في المحافظ", totalOrders: "طلبات الجواهر", pendingOrders: "طلبات جواهر مفتوحة",
       cancel: "إلغاء", networkError: "تعذر إكمال الطلب. تحقق من الاتصال وحاول مجددًا.",
-      documentTitle: "لوحة المالك — NEEN", ownerControlRoom: "غرفة تحكم المالك", newsTickerNav: "إدارة شريط الأخبار",
+      documentTitle: "لوحة المالك — NEEN", ownerControlRoom: "غرفة تحكم المالك",
       ownerOperations: "NEEN / مركز قيادة المالك", ownerRole: "المالك", ownerNavLabel: "تنقل المالك",
       homeLabel: "الرئيسية — NEEN", sectionsLabel: "أقسام لوحة التحكم", switchLanguage: "تغيير لغة لوحة التحكم",
       liveDatabase: "قاعدة البيانات المباشرة", thirtyDays: "آخر 30 يومًا", latest: "الأحدث",
@@ -404,6 +427,28 @@
       headers: { "X-CSRF-Token": csrf.csrf_token },
       body: JSON.stringify(payload),
     });
+  };
+
+  const withButtonLock = async (button, action) => {
+    if (!(button instanceof HTMLButtonElement) || button.disabled) return;
+    button.disabled = true;
+    try {
+      return await action();
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  const lockFormSubmit = (form) => {
+    if (form.dataset.mutating === "true") return null;
+    form.dataset.mutating = "true";
+    const button = form.querySelector('button[type="submit"]');
+    const wasDisabled = button instanceof HTMLButtonElement && button.disabled;
+    if (button instanceof HTMLButtonElement) button.disabled = true;
+    return () => {
+      delete form.dataset.mutating;
+      if (button instanceof HTMLButtonElement) button.disabled = wasDisabled;
+    };
   };
 
   const buildTable = (headers, rows) => {
@@ -1058,9 +1103,29 @@
       ? SITE_MEDIA_CATALOG
       : SITE_MEDIA_CATALOG.filter((item) => item.cat === filter);
 
+    const isSafeMediaUrl = (value) => {
+      if (typeof value !== "string" || value.trim() !== value || value === "" || value.includes("\\")) {
+        return false;
+      }
+      let decodedPath;
+      try {
+        decodedPath = decodeURIComponent(value.split(/[?#]/, 1)[0]);
+      } catch {
+        return false;
+      }
+      if (decodedPath.includes("..") || /[\u0000-\u001f]/.test(decodedPath)) return false;
+      if (/^uploads\/site\/[A-Za-z0-9._/-]+$/.test(value)) return true;
+      if (!value.startsWith("/")) return false;
+      try {
+        return new URL(value, window.location.origin).origin === window.location.origin;
+      } catch {
+        return false;
+      }
+    };
+
     const cards = items.map((item) => {
       const customUrl = state.siteSettings?.[item.key]?.value;
-      const isCustom = typeof customUrl === "string" && customUrl.trim() !== "";
+      const isCustom = isSafeMediaUrl(customUrl);
       const activeSrc = isCustom ? customUrl : item.def;
 
       const card = make("article", "owner-media-card");
@@ -1084,7 +1149,7 @@
 
       const fileInput = document.createElement("input");
       fileInput.type = "file";
-      fileInput.accept = "image/webp,image/png,image/jpeg,image/gif";
+      fileInput.accept = "image/webp,image/png,image/jpeg";
       fileInput.hidden = true;
 
       const changeBtn = make("button", "admin-primary-button", t("mediaChangeBtn"));
@@ -1096,21 +1161,26 @@
       resetBtn.disabled = !isCustom;
       resetBtn.addEventListener("click", async () => {
         if (!window.confirm(t("confirmResetMedia"))) return;
-        resetBtn.disabled = true;
-        try {
-          const data = await mutate("/api/owner/site-media/reset", "POST", { setting_key: item.key });
-          state.siteSettings = data.settings || {};
-          renderSiteMedia();
-          toast(t("saved"));
-        } catch (error) {
-          toast(error instanceof Error ? error.message : t("failed"), true);
-          resetBtn.disabled = false;
-        }
+        await withButtonLock(resetBtn, async () => {
+          try {
+            const data = await mutate("/api/owner/site-media/reset", "POST", { setting_key: item.key });
+            state.siteSettings = data.settings || {};
+            renderSiteMedia();
+            toast(t("saved"));
+          } catch (error) {
+            toast(error instanceof Error ? error.message : t("failed"), true);
+          }
+        });
       });
 
       fileInput.addEventListener("change", async () => {
         const selected = fileInput.files?.[0];
         if (!selected) return;
+        if (selected.size > 5 * 1024 * 1024) {
+          toast(t("mediaTooLarge"), true);
+          fileInput.value = "";
+          return;
+        }
         changeBtn.disabled = true;
         changeBtn.textContent = t("mediaUploadingBtn");
         try {
@@ -1212,29 +1282,34 @@
       const save = make("button", "admin-secondary-button", "Save edit");
       save.type = "button";
       save.addEventListener("click", async () => {
-        try {
-          const result = await mutate(`/api/owner/news-ticker/messages/${item.id}`, "PATCH", {
-            sender_name: senderInput.value,
-            message: messageInput.value,
-          });
-          toast("News message saved.");
-          await loadNewsTicker();
-        } catch (error) {
-          toast(error instanceof Error ? error.message : t("failed"), true);
-        }
+        await withButtonLock(save, async () => {
+          try {
+            await mutate(`/api/owner/news-ticker/messages/${item.id}`, "PATCH", {
+              sender_name: senderInput.value,
+              message: messageInput.value,
+            });
+            toast("News message saved.");
+            await loadNewsTicker();
+          } catch (error) {
+            toast(error instanceof Error ? error.message : t("failed"), true);
+          }
+        });
       });
 
       const actionButton = (label, action, className = "admin-secondary-button") => {
         const button = make("button", className, label);
         button.type = "button";
         button.addEventListener("click", async () => {
-          try {
-            await mutate(`/api/owner/news-ticker/messages/${item.id}/${action}`, "POST", {});
-            toast(`${label} completed.`);
-            await loadNewsTicker();
-          } catch (error) {
-            toast(error instanceof Error ? error.message : t("failed"), true);
-          }
+          if (action === "delete" && !window.confirm(t("confirmDeleteNews"))) return;
+          await withButtonLock(button, async () => {
+            try {
+              await mutate(`/api/owner/news-ticker/messages/${item.id}/${action}`, "POST", {});
+              toast(`${label} completed.`);
+              await loadNewsTicker();
+            } catch (error) {
+              toast(error instanceof Error ? error.message : t("failed"), true);
+            }
+          });
         });
         return button;
       };
@@ -1325,6 +1400,8 @@
       const colors = state.newsData.themes[themeId];
       const enabledInput = newsForm.elements.namedItem("enabled");
       const speedInput = newsForm.elements.namedItem("speed_seconds");
+      const unlock = lockFormSubmit(newsForm);
+      if (!unlock) return;
       try {
         await mutate("/api/owner/news-ticker", "PATCH", {
           enabled: enabledInput instanceof HTMLInputElement ? enabledInput.checked : true,
@@ -1336,6 +1413,8 @@
         await loadNewsTicker();
       } catch (error) {
         toast(error instanceof Error ? error.message : t("failed"), true);
+      } finally {
+        unlock();
       }
     });
   }
@@ -1360,6 +1439,8 @@
     publishFormSubmit.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (!publishFormSubmit.reportValidity()) return;
+      const unlock = lockFormSubmit(publishFormSubmit);
+      if (!unlock) return;
       const values = new FormData(publishFormSubmit);
       try {
         await mutate("/api/owner/news-ticker/messages/publish", "POST", {
@@ -1373,6 +1454,8 @@
         await loadNewsTicker();
       } catch (error) {
         toast(error instanceof Error ? error.message : t("failed"), true);
+      } finally {
+        unlock();
       }
     });
   }
@@ -1438,6 +1521,8 @@
     if (!(form instanceof HTMLFormElement)) return;
     if (form.matches("[data-owner-profile]")) {
       event.preventDefault();
+      const unlock = lockFormSubmit(form);
+      if (!unlock) return;
       const fields = Object.fromEntries(new FormData(form).entries());
       const userId = form.dataset.ownerProfile;
       try {
@@ -1446,11 +1531,15 @@
         await Promise.all([refreshSelected(), loadOverview()]);
       } catch (error) {
         toast(error instanceof Error ? error.message : t("failed"), true);
+      } finally {
+        unlock();
       }
     }
     if (form.matches("[data-owner-roles]")) {
       event.preventDefault();
       if (!window.confirm(t("confirmRole"))) return;
+      const unlock = lockFormSubmit(form);
+      if (!unlock) return;
       const fields = new FormData(form);
       try {
         await mutate(`/api/owner/users/${form.dataset.ownerRoles}/roles`, "PATCH", {
@@ -1461,6 +1550,8 @@
         await Promise.all([refreshSelected(), loadUsers(), loadOverview()]);
       } catch (error) {
         toast(error instanceof Error ? error.message : t("failed"), true);
+      } finally {
+        unlock();
       }
     }
     if (form.matches("[data-owner-adjustment]")) {
@@ -1470,6 +1561,8 @@
         return;
       }
       if (!window.confirm(t("confirmAdjustment"))) return;
+      const unlock = lockFormSubmit(form);
+      if (!unlock) return;
       const fields = new FormData(form);
       try {
         await mutate(`/api/admin/wallets/${state.selectedUser.id}/adjustments`, "POST", {
@@ -1484,11 +1577,15 @@
         await Promise.all([refreshSelected(), loadOverview()]);
       } catch (error) {
         toast(error instanceof Error ? error.message : t("failed"), true);
+      } finally {
+        unlock();
       }
     }
     if (form.matches("[data-owner-game]")) {
       event.preventDefault();
       if (!window.confirm(t("confirmGame"))) return;
+      const unlock = lockFormSubmit(form);
+      if (!unlock) return;
       const fields = new FormData(form);
       try {
         await mutate(`/api/owner/games/${form.dataset.ownerGame}`, "PATCH", {
@@ -1502,10 +1599,14 @@
         await Promise.all([loadGames(), loadOverview()]);
       } catch (error) {
         toast(error instanceof Error ? error.message : t("failed"), true);
+      } finally {
+        unlock();
       }
     }
     if (form.matches("[data-owner-site-settings]")) {
       event.preventDefault();
+      const unlock = lockFormSubmit(form);
+      if (!unlock) return;
       const fields = new FormData(form);
       try {
         await mutate("/api/owner/site-settings", "PATCH", {
@@ -1516,6 +1617,8 @@
         await loadSiteSettings();
       } catch (error) {
         toast(error instanceof Error ? error.message : t("failed"), true);
+      } finally {
+        unlock();
       }
     }
   });
@@ -1595,5 +1698,4 @@
   });
 
   setLanguage(state.language);
-  loadOverview();
 })();

@@ -49,7 +49,8 @@ final class AdminPage
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
         $nowText = $now->format('Y-m-d H:i:s');
         $statement = $db->prepare(
-            'SELECT s.id AS session_id, s.expires_at, u.id AS user_id, u.username, u.email, u.status
+            'SELECT s.id AS session_id, s.created_at, s.expires_at,
+                    u.id AS user_id, u.username, u.email, u.status
              FROM user_sessions s
              JOIN users u ON u.id = s.user_id
              WHERE s.session_token_hash = :token_hash AND s.revoked_at IS NULL
@@ -61,7 +62,9 @@ final class AdminPage
             throw new AdminPageAccessException(401);
         }
 
-        if ($session['expires_at'] <= $nowText) {
+        $absoluteExpires = (new DateTimeImmutable((string) $session['created_at'], new DateTimeZone('UTC')))
+            ->modify('+12 hours');
+        if ($session['expires_at'] <= $nowText || $absoluteExpires <= $now) {
             $statement = $db->prepare(
                 'UPDATE user_sessions SET revoked_at = :revoked_at
                  WHERE id = :id AND revoked_at IS NULL',
@@ -69,24 +72,6 @@ final class AdminPage
             $statement->execute(['revoked_at' => $nowText, 'id' => $session['session_id']]);
             throw new AdminPageAccessException(401);
         }
-
-        $expires = $now->modify('+30 minutes');
-        $statement = $db->prepare(
-            'UPDATE user_sessions SET expires_at = :expires_at, last_activity_at = :last_activity_at
-             WHERE id = :id AND revoked_at IS NULL',
-        );
-        $statement->execute([
-            'expires_at' => $expires->format('Y-m-d H:i:s'),
-            'last_activity_at' => $nowText,
-            'id' => $session['session_id'],
-        ]);
-        setcookie('neen_session', $token, [
-            'expires' => $expires->getTimestamp(),
-            'path' => '/',
-            'secure' => $environment !== 'test',
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
 
         $statement = $db->prepare(
             'SELECT r.name
@@ -116,6 +101,24 @@ final class AdminPage
         if (array_intersect(self::PAGE_PERMISSIONS, $permissions) === []) {
             throw new AdminPageAccessException(403);
         }
+
+        $expires = $now->modify('+30 minutes');
+        $statement = $db->prepare(
+            'UPDATE user_sessions SET expires_at = :expires_at, last_activity_at = :last_activity_at
+             WHERE id = :id AND revoked_at IS NULL',
+        );
+        $statement->execute([
+            'expires_at' => $expires->format('Y-m-d H:i:s'),
+            'last_activity_at' => $nowText,
+            'id' => $session['session_id'],
+        ]);
+        setcookie('neen_session', $token, [
+            'expires' => $expires->getTimestamp(),
+            'path' => '/',
+            'secure' => $environment !== 'test',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
 
         return [
             'user_id' => (int) $session['user_id'],

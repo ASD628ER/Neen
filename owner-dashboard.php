@@ -7,8 +7,14 @@ require_once __DIR__ . '/api/src/AdminPage.php';
 
 header('Cache-Control: no-store, private');
 header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 header('Referrer-Policy: same-origin');
 header("Content-Security-Policy: default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+$isHttps = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== '' && strtolower((string) $_SERVER['HTTPS']) !== 'off';
+if ($isHttps) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
 
 try {
     $owner = AdminPage::authorize(Database::connect(), true);
@@ -95,7 +101,12 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
             </div>
             <button class="owner-language-toggle" type="button" data-language-toggle data-i18n-aria-label="switchLanguage">عربي</button>
             <div class="admin-identity">
-              <span class="admin-avatar" aria-hidden="true"><?= $escape(strtoupper(substr($owner['username'], 0, 1))) ?></span>
+              <span class="admin-avatar" aria-hidden="true"><?php
+                  $initial = function_exists('mb_substr') && function_exists('mb_strtoupper')
+                      ? mb_strtoupper(mb_substr($owner['username'], 0, 1, 'UTF-8'), 'UTF-8')
+                      : strtoupper(substr($owner['username'], 0, 1));
+                  echo $escape($initial);
+              ?></span>
               <span class="admin-identity-copy"><strong dir="ltr"><?= $escape($owner['username']) ?></strong><small data-i18n="ownerRole">Owner</small></span>
               <button class="admin-logout" type="button" data-logout data-i18n="signOut">Sign out</button>
             </div>
@@ -158,7 +169,7 @@ $escape = static fn (string $value): string => htmlspecialchars($value, ENT_QUOT
                 <label><span data-i18n="direction">Direction</span><select name="direction" required><option value="credit" data-i18n="credit">Add</option><option value="debit" data-i18n="debit">Deduct</option></select></label>
                 <label><span data-i18n="balanceType">Balance type</span><select name="balance_type" required><option value="earned" data-i18n="earned">Earned</option><option value="purchased" data-i18n="purchased">Purchased</option></select></label>
                 <label><span data-i18n="amount">Amount</span><input name="amount" type="number" min="1" max="100000000" step="1" required dir="ltr" /></label>
-                <label class="admin-form-wide"><span data-i18n="reason">Reason (required)</span><input name="reason" minlength="3" maxlength="1000" data-i18n-placeholder="reasonPlaceholder" placeholder="Explain this adjustment" /></label>
+                <label class="admin-form-wide"><span data-i18n="reason">Reason (required)</span><input name="reason" minlength="3" maxlength="1000" required data-i18n-placeholder="reasonPlaceholder" placeholder="Explain this adjustment" /></label>
                 <button class="admin-primary-button" type="submit" data-i18n="submitAdjustment">Submit adjustment</button>
               </form>
               <p class="owner-warning" data-i18n="adjustmentWarning">Every adjustment is permanent in the ledger. Verify the account, balance type, amount, and reason before submitting.</p>

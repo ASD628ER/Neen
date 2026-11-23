@@ -613,7 +613,8 @@ final class OwnerDashboard
             'image/jpeg' => 'jpg',
             'image/gif' => 'gif',
         ];
-        if (!isset($mimeToExt[$mime]) || @getimagesize($tmpName) === false) {
+        $imageInfo = @getimagesize($tmpName);
+        if (!isset($mimeToExt[$mime]) || $imageInfo === false || ($imageInfo['mime'] ?? null) !== $mime) {
             throw new ApiException('VALIDATION_ERROR', 'Only valid WebP, PNG, JPG, or GIF images are allowed.', 422);
         }
 
@@ -623,10 +624,14 @@ final class OwnerDashboard
         }
         $htaccessPath = $uploadDir . '/.htaccess';
         if (!file_exists($htaccessPath)) {
-            @file_put_contents(
+            $written = @file_put_contents(
                 $htaccessPath,
-                "<FilesMatch \"\\.(php|phtml|php3|php4|php5|phar)$\">\n    Require all denied\n</FilesMatch>\nOptions -Indexes\n"
+                "<FilesMatch \"\\.(php|phtml|php3|php4|php5|php7|php8|pht|phar)$\">\n    Require all denied\n</FilesMatch>\nOptions -Indexes\n",
+                LOCK_EX,
             );
+            if ($written === false) {
+                throw new RuntimeException('Could not protect uploads/site from script execution.');
+            }
         }
 
         $filename = $settingKey . '_' . gmdate('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $mimeToExt[$mime];
