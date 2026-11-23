@@ -1,5 +1,6 @@
 const arabicTranslations = {
   "!": "!",
+  "Admin Dashboard": "لوحة الإدارة",
   "Owner Dashboard": "لوحة المالك",
   ", a content creator passionate about bringing unique and crazy ideas to Free Fire. From exploring exciting in-game concepts to explaining events, updates, skins, and rewards, I aim to make everything clear, simple, and enjoyable for every player.": "، صانعة محتوى شغوفة بتقديم أفكار مميزة ومبتكرة في فري فاير، وشرح الفعاليات والتحديثات والسكنات والمكافآت بطريقة واضحة وبسيطة وممتعة للجميع.",
   "/ ABOUT ME": "/ نبذة عني",
@@ -1059,6 +1060,7 @@ if (languageNavigation) {
       if (lookupId !== authLookupId) return;
       if (response.status === 401) {
         languageNavigation.querySelector("[data-owner-dashboard-link]")?.remove();
+        languageNavigation.querySelector("[data-admin-dashboard-link]")?.remove();
         label.textContent = "Sign in / Join";
         status.hidden = true;
         username.hidden = true;
@@ -1078,6 +1080,26 @@ if (languageNavigation) {
       if (status) { status.textContent = ""; status.hidden = true; }
       accountLink.title = `Signed in as ${result.data.user.username}`;
       accountLink.setAttribute("aria-label", `Account, signed in as ${result.data.user.username}`);
+      const staffRoles = ["owner", "super_admin", "game_admin", "support_admin", "moderator"];
+      const hasStaffRole = Array.isArray(result.data.user.roles)
+        && result.data.user.roles.some((role) => staffRoles.includes(role));
+      const hasAdminPermission = Array.isArray(result.data.user.permissions)
+        && result.data.user.permissions.some((permission) => typeof permission === "string" && permission.length > 0);
+      let adminDashboardLink = languageNavigation.querySelector("[data-admin-dashboard-link]");
+      if (hasStaffRole || hasAdminPermission) {
+        if (!adminDashboardLink) {
+          adminDashboardLink = document.createElement("a");
+          adminDashboardLink.href = "events-admin.php";
+          adminDashboardLink.className = "nav-link";
+          adminDashboardLink.dataset.adminDashboardLink = "";
+          adminDashboardLink.textContent = "Admin Dashboard";
+        }
+        const ownerDashboardLink = languageNavigation.querySelector("[data-owner-dashboard-link]");
+        languageNavigation.insertBefore(adminDashboardLink, ownerDashboardLink ?? languageToggle ?? socialLink);
+        translateSubtree(adminDashboardLink, activeLanguage);
+      } else {
+        adminDashboardLink?.remove();
+      }
       let ownerDashboardLink = languageNavigation.querySelector("[data-owner-dashboard-link]");
       if (Array.isArray(result.data.user.roles) && result.data.user.roles.includes("owner")) {
         if (!ownerDashboardLink) {
@@ -1095,6 +1117,7 @@ if (languageNavigation) {
     } catch {
       if (lookupId !== authLookupId) return;
       languageNavigation.querySelector("[data-owner-dashboard-link]")?.remove();
+      languageNavigation.querySelector("[data-admin-dashboard-link]")?.remove();
       label.textContent = "Account";
       status.textContent = "Could not verify session";
       status.hidden = false;
