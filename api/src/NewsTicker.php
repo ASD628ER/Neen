@@ -50,7 +50,8 @@ final class NewsTicker
                     "SELECT id, sender_name, message, source
                      FROM news_ticker_messages
                      WHERE status = 'Approved' AND display_active = 1
-                     ORDER BY approved_at DESC, id DESC",
+                     ORDER BY approved_at DESC, id DESC
+                     LIMIT 50",
                 );
                 $statement->execute();
                 foreach ($statement->fetchAll() as $row) {

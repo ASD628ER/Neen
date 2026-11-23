@@ -35,12 +35,24 @@ final class Api
 
             if ($path === '/api/site-settings') {
                 $this->expectMethod($method, 'GET');
-                $this->send(true, ['settings' => (new OwnerDashboard($this->db))->siteSettings()]);
+                $this->send(
+                    true,
+                    ['settings' => (new OwnerDashboard($this->db))->siteSettings()],
+                    [],
+                    200,
+                    ['Cache-Control' => 'public, max-age=60, stale-while-revalidate=30'],
+                );
             }
 
             if ($path === '/api/news-ticker') {
                 $this->expectMethod($method, 'GET');
-                $this->send(true, (new NewsTicker($this->db))->publicData());
+                $this->send(
+                    true,
+                    (new NewsTicker($this->db))->publicData(),
+                    [],
+                    200,
+                    ['Cache-Control' => 'public, max-age=60, stale-while-revalidate=30'],
+                );
             }
 
             if ($path === '/api/news-ticker/messages') {
@@ -1964,6 +1976,7 @@ final class Api
         $now = $this->now();
         $statement = $this->db->prepare(
             'SELECT s.id AS session_id, s.user_id, s.csrf_token_hash, s.expires_at,
+                    s.last_activity_at,
                     u.status, u.email_verified
              FROM user_sessions s
              JOIN users u ON u.id = s.user_id
@@ -1987,17 +2000,23 @@ final class Api
             return null;
         }
 
-        $expires = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('+30 minutes');
-        $statement = $this->db->prepare(
-            'UPDATE user_sessions SET expires_at = :expires_at, last_activity_at = :last_activity_at
-             WHERE id = :id AND revoked_at IS NULL',
-        );
-        $statement->execute([
-            'expires_at' => $expires->format('Y-m-d H:i:s'),
-            'last_activity_at' => $now,
-            'id' => $auth['session_id'],
-        ]);
-        $this->setCookie('neen_session', $token, $expires->getTimestamp(), true);
+        $lastActivityTimestamp = is_string($auth['last_activity_at'])
+            ? strtotime($auth['last_activity_at'] . ' UTC')
+            : false;
+        $nowTimestamp = strtotime($now . ' UTC');
+        if ($lastActivityTimestamp === false || $lastActivityTimestamp < $nowTimestamp - 120) {
+            $expires = (new DateTimeImmutable($now, new DateTimeZone('UTC')))->modify('+30 minutes');
+            $statement = $this->db->prepare(
+                'UPDATE user_sessions SET expires_at = :expires_at, last_activity_at = :last_activity_at
+                 WHERE id = :id AND revoked_at IS NULL',
+            );
+            $statement->execute([
+                'expires_at' => $expires->format('Y-m-d H:i:s'),
+                'last_activity_at' => $now,
+                'id' => $auth['session_id'],
+            ]);
+            $this->setCookie('neen_session', $token, $expires->getTimestamp(), true);
+        }
 
         return [
             'session_id' => (int) $auth['session_id'],

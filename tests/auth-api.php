@@ -67,6 +67,16 @@ function request(
     return [$status, json_decode($body, true, 32, JSON_THROW_ON_ERROR), $responseHeaders];
 }
 
+function responseHeader(array $headers, string $name): ?string
+{
+    foreach ($headers as $header) {
+        if (stripos($header, $name . ':') === 0) {
+            return trim(substr($header, strlen($name) + 1));
+        }
+    }
+    return null;
+}
+
 function uploadRequest(
     string $baseUrl,
     string $path,
@@ -298,6 +308,31 @@ try {
     assertTrue($ready, 'API test server starts');
 
     $cookies = [];
+    [$publicSettingsStatus, , $publicSettingsHeaders] = request($baseUrl, '/api/site-settings', $cookies);
+    assertTrue(
+        $publicSettingsStatus === 200
+        && responseHeader($publicSettingsHeaders, 'Cache-Control') === 'public, max-age=60, stale-while-revalidate=30',
+        'Public site settings use short-lived shared caching',
+    );
+    [$publicTickerStatus, , $publicTickerHeaders] = request($baseUrl, '/api/news-ticker', $cookies);
+    assertTrue(
+        $publicTickerStatus === 200
+        && responseHeader($publicTickerHeaders, 'Cache-Control') === 'public, max-age=60, stale-while-revalidate=30',
+        'Public ticker data uses short-lived shared caching',
+    );
+    foreach ([
+        '/api/auth/me',
+        '/api/homepage-rewards',
+        '/api/owner/news-ticker',
+        '/api/admin/audit-logs',
+    ] as $privatePath) {
+        [, , $privateHeaders] = request($baseUrl, $privatePath, $cookies);
+        assertTrue(
+            responseHeader($privateHeaders, 'Cache-Control') === 'no-store',
+            $privatePath . ' responses remain non-cacheable',
+        );
+    }
+
     [$status, $response] = request($baseUrl, '/api/auth/csrf', $cookies);
     assertTrue($status === 200, 'Anonymous CSRF endpoint responds');
     $csrf = $response['data']['csrf_token'];
@@ -662,6 +697,45 @@ try {
         $response['data']['user']['permissions'] === ['view_wallet', 'view_wallet_transactions'],
         'New accounts receive only read-only wallet permissions',
     );
+
+    $sessionDb = new PDO('sqlite:' . $databasePath);
+    $sessionQuery = $sessionDb->prepare(
+        'SELECT expires_at, last_activity_at FROM user_sessions WHERE session_token_hash = :token_hash',
+    );
+    $sessionQuery->execute(['token_hash' => hash('sha256', $cookies['neen_session'])]);
+    $sessionStateBefore = $sessionQuery->fetch(PDO::FETCH_ASSOC);
+    $sessionQuery->closeCursor();
+    [$status, , $sessionHeaders] = request($baseUrl, '/api/auth/me', $cookies);
+    $sessionQuery->execute(['token_hash' => hash('sha256', $cookies['neen_session'])]);
+    $sessionStateAfter = $sessionQuery->fetch(PDO::FETCH_ASSOC);
+    $sessionQuery->closeCursor();
+    assertTrue(
+        $status === 200
+        && is_array($sessionStateBefore)
+        && $sessionStateAfter === $sessionStateBefore
+        && responseHeader($sessionHeaders, 'Set-Cookie') === null,
+        'Recent authenticated activity skips the session update and cookie refresh',
+    );
+
+    $staleActivity = gmdate('Y-m-d H:i:s', time() - 121);
+    $sessionDb->prepare(
+        'UPDATE user_sessions SET last_activity_at = :last_activity_at WHERE session_token_hash = :token_hash',
+    )->execute([
+        'last_activity_at' => $staleActivity,
+        'token_hash' => hash('sha256', $cookies['neen_session']),
+    ]);
+    [$status, , $sessionHeaders] = request($baseUrl, '/api/auth/me', $cookies);
+    $sessionQuery->execute(['token_hash' => hash('sha256', $cookies['neen_session'])]);
+    $sessionStateAfter = $sessionQuery->fetch(PDO::FETCH_ASSOC);
+    $sessionQuery->closeCursor();
+    assertTrue(
+        $status === 200
+        && is_array($sessionStateAfter)
+        && $sessionStateAfter['last_activity_at'] !== $staleActivity
+        && responseHeader($sessionHeaders, 'Set-Cookie') !== null,
+        'Stale authenticated activity refreshes the session and cookie',
+    );
+    unset($sessionQuery, $sessionDb);
 
     [$status, $response] = request($baseUrl, '/api/users/me', $cookies);
     assertTrue(

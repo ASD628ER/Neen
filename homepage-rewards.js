@@ -76,6 +76,31 @@
     }
   };
 
+  const renderGuestState = () => {
+    button.disabled = true;
+    button.textContent = "Sign in to claim";
+    message.textContent = "Sign in to NEEN to check and claim a homepage reward.";
+  };
+
+  const authStatus = window.neenAuthStatus;
+  if (authStatus === "checking") {
+    const handleAuthStatus = (event) => {
+      window.removeEventListener("neen:authstatus", handleAuthStatus);
+      if (event.detail?.status === "signed-out") {
+        renderGuestState();
+      } else {
+        refresh();
+      }
+    };
+    window.addEventListener("neen:authstatus", handleAuthStatus);
+  } else if (authStatus === "signed-out") {
+    renderGuestState();
+  } else {
+    refresh();
+  }
+
+  window.addEventListener("neen:authchange", refresh);
+
   button.addEventListener("click", async () => {
     button.disabled = true;
     message.textContent = "Submitting claim to the server…";
@@ -99,6 +124,4 @@
       await refresh();
     }
   });
-
-  refresh();
 })();

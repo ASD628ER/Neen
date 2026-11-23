@@ -980,7 +980,6 @@ const updatePublicSiteSettings = async () => {
   try {
     const response = await fetch("/api/site-settings", {
       credentials: "same-origin",
-      cache: "no-store",
       headers: { Accept: "application/json" },
     });
     const result = await response.json();
@@ -1045,6 +1044,7 @@ if (languageNavigation) {
   let authLookupId = 0;
   const updateAccountNavigation = async () => {
     const lookupId = ++authLookupId;
+    window.neenAuthStatus = "checking";
     const label = accountLink.querySelector("[data-account-label]");
     const status = accountLink.querySelector("[data-account-status]");
     const username = accountLink.querySelector("[data-account-username]");
@@ -1062,6 +1062,10 @@ if (languageNavigation) {
       }
       if (lookupId !== authLookupId) return;
       if (response.status === 401) {
+        window.neenAuthStatus = "signed-out";
+        window.dispatchEvent(new CustomEvent("neen:authstatus", {
+          detail: { status: window.neenAuthStatus },
+        }));
         languageNavigation.querySelector("[data-owner-dashboard-link]")?.remove();
         languageNavigation.querySelector("[data-admin-dashboard-link]")?.remove();
         label.textContent = "Sign in / Join";
@@ -1073,6 +1077,10 @@ if (languageNavigation) {
       if (!response.ok || result.success !== true || typeof result.data?.user?.username !== "string") {
         throw new Error("The account service could not verify the current session.");
       }
+      window.neenAuthStatus = "signed-in";
+      window.dispatchEvent(new CustomEvent("neen:authstatus", {
+        detail: { status: window.neenAuthStatus },
+      }));
       label.textContent = "";
       label.hidden = true;
       status.textContent = "";
@@ -1119,6 +1127,10 @@ if (languageNavigation) {
       }
     } catch {
       if (lookupId !== authLookupId) return;
+      window.neenAuthStatus = "unknown";
+      window.dispatchEvent(new CustomEvent("neen:authstatus", {
+        detail: { status: window.neenAuthStatus },
+      }));
       languageNavigation.querySelector("[data-owner-dashboard-link]")?.remove();
       languageNavigation.querySelector("[data-admin-dashboard-link]")?.remove();
       label.textContent = "Account";
@@ -2045,7 +2057,7 @@ if (diamondForm instanceof HTMLFormElement) {
 
   const loadTicker = async () => {
     try {
-      const response = await fetch("/api/news-ticker", { credentials: "same-origin", cache: "no-store" });
+      const response = await fetch("/api/news-ticker", { credentials: "same-origin" });
       const result = await response.json();
       if (!response.ok || result.success !== true) throw new Error("Ticker unavailable");
       const data = result.data;

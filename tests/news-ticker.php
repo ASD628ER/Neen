@@ -134,4 +134,21 @@ foreach (array_keys(NewsTicker::THEMES) as $themeId) {
     tickerAssert($settings['theme'] === $themeId, "Theme {$themeId} can be saved independently");
 }
 
+$bulkMessage = $db->prepare(
+    "INSERT INTO news_ticker_messages
+        (sender_name, message, status, display_active, source, approved_at, created_at, updated_at)
+     VALUES (:sender_name, :message, 'Approved', 1, 'Owner', :approved_at, :created_at, :updated_at)",
+);
+for ($index = 0; $index < 51; $index++) {
+    $now = gmdate('Y-m-d H:i:s');
+    $bulkMessage->execute([
+        'sender_name' => 'Owner ' . $index,
+        'message' => 'Approved public message ' . $index,
+        'approved_at' => $now,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+}
+tickerAssert(count($ticker->publicData()['messages']) === 50, 'Public ticker data is capped at 50 approved messages');
+
 @unlink($databasePath);
