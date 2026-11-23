@@ -1285,70 +1285,65 @@ const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 if (finePointer.matches && !reducedMotion.matches) {
-  let ambientFrame = 0;
-  let pointerX = 0;
-  let pointerY = 0;
+  const setupTilt = (target, surface, xProperty, yProperty) => {
+    let bounds = null;
+    let pointerX = 0;
+    let pointerY = 0;
+    let frame = 0;
 
-  const updateAmbientPosition = () => {
-    if (ambientFrame) return;
-    ambientFrame = window.requestAnimationFrame(() => {
-      document.documentElement.style.setProperty("--ambient-pointer-x", `${pointerX}px`);
-      document.documentElement.style.setProperty("--ambient-pointer-y", `${pointerY}px`);
-      ambientFrame = 0;
-    });
+    const updateTilt = () => {
+      frame = 0;
+      if (!bounds || bounds.width === 0 || bounds.height === 0) return;
+      const horizontal = (pointerX - bounds.left) / bounds.width - 0.5;
+      const vertical = (pointerY - bounds.top) / bounds.height - 0.5;
+      surface.style.setProperty(xProperty, `${vertical * -3}deg`);
+      surface.style.setProperty(yProperty, `${horizontal * 3}deg`);
+    };
+
+    const scheduleTilt = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateTilt);
+    };
+
+    const refreshBounds = () => {
+      if (!bounds) return;
+      bounds = target.getBoundingClientRect();
+      scheduleTilt();
+    };
+
+    const handlePointerEnter = (event) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      bounds = target.getBoundingClientRect();
+      scheduleTilt();
+    };
+
+    const handlePointerMove = (event) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      scheduleTilt();
+    };
+
+    const handlePointerLeave = () => {
+      bounds = null;
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = 0;
+      surface.style.removeProperty(xProperty);
+      surface.style.removeProperty(yProperty);
+    };
+
+    target.addEventListener("pointerenter", handlePointerEnter, { passive: true });
+    target.addEventListener("pointermove", handlePointerMove, { passive: true });
+    target.addEventListener("pointerleave", handlePointerLeave, { passive: true });
+    window.addEventListener("resize", refreshBounds, { passive: true });
+    window.addEventListener("scroll", refreshBounds, { capture: true, passive: true });
   };
 
-  const resetAmbientPosition = () => {
-    pointerX = 0;
-    pointerY = 0;
-    updateAmbientPosition();
-  };
-
-  document.addEventListener("pointermove", (event) => {
-    if (event.pointerType === "touch") return;
-    pointerX = ((event.clientX / window.innerWidth) - 0.5) * 10;
-    pointerY = ((event.clientY / window.innerHeight) - 0.5) * 10;
-    updateAmbientPosition();
-  }, { passive: true });
-
-  document.documentElement.addEventListener("pointerleave", resetAmbientPosition, { passive: true });
-  window.addEventListener("blur", resetAmbientPosition);
-}
-
-if (homeHero instanceof HTMLElement && homeHeroArt instanceof HTMLElement && finePointer.matches && !reducedMotion.matches) {
-  const resetHeroTilt = () => {
-    homeHeroArt.style.removeProperty("--hero-tilt-x");
-    homeHeroArt.style.removeProperty("--hero-tilt-y");
-  };
-
-  homeHero.addEventListener("pointermove", (event) => {
-    const bounds = homeHero.getBoundingClientRect();
-    const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
-    const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
-
-    homeHeroArt.style.setProperty("--hero-tilt-x", `${vertical * -3}deg`);
-    homeHeroArt.style.setProperty("--hero-tilt-y", `${horizontal * 3}deg`);
-  }, { passive: true });
-
-  homeHero.addEventListener("pointerleave", resetHeroTilt);
-}
-
-if (arcadeSpotlight instanceof HTMLElement && finePointer.matches && !reducedMotion.matches) {
-  const resetSpotlightTilt = () => {
-    arcadeSpotlight.style.removeProperty("--spotlight-tilt-x");
-    arcadeSpotlight.style.removeProperty("--spotlight-tilt-y");
-  };
-
-  arcadeSpotlight.addEventListener("pointermove", (event) => {
-    const bounds = arcadeSpotlight.getBoundingClientRect();
-    const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
-    const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
-
-    arcadeSpotlight.style.setProperty("--spotlight-tilt-x", `${vertical * -3}deg`);
-    arcadeSpotlight.style.setProperty("--spotlight-tilt-y", `${horizontal * 3}deg`);
-  }, { passive: true });
-
-  arcadeSpotlight.addEventListener("pointerleave", resetSpotlightTilt);
+  if (homeHero instanceof HTMLElement && homeHeroArt instanceof HTMLElement) {
+    setupTilt(homeHero, homeHeroArt, "--hero-tilt-x", "--hero-tilt-y");
+  }
+  if (arcadeSpotlight instanceof HTMLElement) {
+    setupTilt(arcadeSpotlight, arcadeSpotlight, "--spotlight-tilt-x", "--spotlight-tilt-y");
+  }
 }
 
 const revealTargets = document.querySelectorAll(
@@ -1961,37 +1956,6 @@ if (diamondForm instanceof HTMLFormElement) {
     reviewButton.setAttribute("aria-describedby", "topup-setup-status");
   }
   updateAvailability();
-}
-
-if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-  const customCursor = document.createElement("span");
-  const interactiveSelector =
-    "a, button, input[type='button'], input[type='submit'], input[type='reset'], input[type='checkbox'], input[type='radio'], input[type='file'], select, summary, label, [role='button'], [role='link'], [tabindex]:not([tabindex='-1'])";
-
-  customCursor.className = "neen-cursor";
-  customCursor.setAttribute("aria-hidden", "true");
-  customCursor.textContent = "N";
-  document.body.append(customCursor);
-  document.body.classList.add("neen-cursor-active");
-
-  const updateCustomCursor = (event) => {
-    if (event.pointerType === "touch") return;
-
-    customCursor.style.transform = `translate3d(${event.clientX}px, ${event.clientY}px, 0)`;
-    customCursor.classList.add("is-visible");
-
-    const target = event.target instanceof Element ? event.target.closest(interactiveSelector) : null;
-    const isDisabled = target?.matches(":disabled, [aria-disabled='true']") ?? false;
-    customCursor.classList.toggle("is-interactive", Boolean(target) && !isDisabled);
-    customCursor.classList.toggle("is-disabled", isDisabled);
-  };
-
-  document.addEventListener("pointermove", updateCustomCursor, { passive: true });
-  document.addEventListener("pointerover", updateCustomCursor, { passive: true });
-  document.addEventListener("pointerdown", updateCustomCursor, { passive: true });
-  document.addEventListener("pointerout", (event) => {
-    if (!event.relatedTarget) customCursor.classList.remove("is-visible");
-  }, { passive: true });
 }
 
 /* === PALESTINE FLAG HEADER INJECTION === */

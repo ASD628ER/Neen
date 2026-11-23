@@ -74,8 +74,6 @@ body::after {
     150px 170px,
     100% 100%;
   background-repeat: no-repeat, no-repeat, repeat, repeat, repeat, no-repeat;
-  translate: var(--ambient-pointer-x, 0px) var(--ambient-pointer-y, 0px);
-  transition: translate 600ms ease-out;
   animation: neen-ambient-drift 54s ease-in-out infinite alternate;
 }
 
@@ -1474,8 +1472,6 @@ button:focus-visible {
   body::after {
     animation: none;
     opacity: 0.2;
-    translate: none;
-    transition: none;
   }
 }
 
@@ -5475,75 +5471,6 @@ html[dir="rtl"] .home-about-art figcaption {
 @media (prefers-reduced-motion: reduce) {
   .falling-flowers {
     display: none;
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  body.neen-cursor-active,
-  body.neen-cursor-active * {
-    cursor: none !important;
-  }
-
-  .neen-cursor {
-    position: fixed;
-    z-index: 9999;
-    top: 0;
-    left: 0;
-    display: block;
-    width: 28px;
-    height: 32px;
-    color: transparent;
-    background: linear-gradient(145deg, var(--pink) 8%, var(--magenta) 70%, var(--lavender));
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-family: var(--display);
-    font-size: 26px;
-    font-weight: 800;
-    line-height: 1;
-    pointer-events: none;
-    user-select: none;
-    opacity: 0;
-    filter: drop-shadow(0 1px 1px rgb(180 79 135 / 25%));
-    will-change: transform;
-    transition: opacity 100ms ease;
-  }
-
-  .neen-cursor.is-visible {
-    opacity: 1;
-  }
-
-  .neen-cursor::after {
-    position: absolute;
-    top: 1px;
-    right: 0;
-    width: 8px;
-    height: 8px;
-    border: 1.5px solid var(--surface);
-    border-radius: 50%;
-    background: var(--lavender);
-    box-shadow: 0 0 0 1px var(--magenta);
-    content: "";
-    opacity: 0;
-    transform: scale(0.5);
-    transition: opacity 120ms ease, transform 120ms ease;
-  }
-
-  .neen-cursor.is-interactive::after {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  .neen-cursor.is-disabled::after {
-    background: linear-gradient(45deg, transparent 43%, var(--magenta) 45% 55%, transparent 57%), var(--lavender);
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
-  .neen-cursor,
-  .neen-cursor::after {
-    transition: none;
   }
 }
 
