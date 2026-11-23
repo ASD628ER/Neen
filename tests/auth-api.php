@@ -1989,10 +1989,24 @@ try {
         && $targetSession['time_remaining_ms'] > 0
         && $targetSession['score'] === 0
         && is_array($targetSession['active_target'])
+        && count($targetSession['lookahead_targets'] ?? []) >= 5
+        && $targetSession['lookahead_targets'][0]['index'] === 0
+        && $targetSession['lookahead_targets'][0]['starts_at_ms'] === 0
+        && $targetSession['lookahead_targets'][0]['ends_at_ms'] === 1_100
+        && is_int($targetSession['server_elapsed_ms'])
         && !array_key_exists('targets', $targetSession),
-        'Target Rush starts with a private server-generated target stream and consumes one Cairo-day attempt',
+        'Target Rush starts with a private server-generated target stream, a bounded lookahead, and one Cairo-day attempt',
     );
     $targetSessionId = $targetSession['id'];
+    [$futureTargetStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
+        $cookies,
+        ['token' => $targetSession['lookahead_targets'][1]['token']],
+        $csrf,
+        'POST',
+    );
+    assertTrue($futureTargetStatus === 409, 'Target Rush rejects a lookahead target before its server-defined start time');
     [$tamperedHitStatus] = request(
         $baseUrl,
         '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
@@ -2036,11 +2050,72 @@ try {
             $safeIndexes[] = $index;
         }
     }
+    $runState['started_at_ms'] = (int) floor(microtime(true) * 1000) - 1_100 - 150;
+    $targetDb->prepare(
+        'UPDATE vault_cracker_states SET guesses_json = :state WHERE session_id = :session_id',
+    )->execute([
+        'state' => json_encode($runState, JSON_THROW_ON_ERROR),
+        'session_id' => $targetSessionId,
+    ]);
+    [$graceHitStatus, $graceHitResponse] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
+        $cookies,
+        ['token' => $targetList[0]['token']],
+        $csrf,
+        'POST',
+    );
+    assertTrue(
+        $graceHitStatus === 200
+        && is_int($graceHitResponse['data']['session']['server_elapsed_ms'] ?? null)
+        && ($graceHitResponse['data']['session']['lookahead_targets'][0]['index'] ?? null) === 1,
+        'Target Rush accepts a hit within the 300ms grace period and refreshes its server-timed lookahead',
+    );
+    $runState = json_decode((string) $targetDb->query(
+        'SELECT guesses_json FROM vault_cracker_states WHERE session_id = ' . (int) $targetSessionId,
+    )->fetchColumn(), true, 16, JSON_THROW_ON_ERROR);
+    $runState['started_at_ms'] = (int) floor(microtime(true) * 1000) - 1_100 - 100;
+    $runState['hits'][0]['received_at_ms'] = $runState['started_at_ms'] + 100;
+    $targetDb->prepare(
+        'UPDATE vault_cracker_states SET guesses_json = :state WHERE session_id = :session_id',
+    )->execute([
+        'state' => json_encode($runState, JSON_THROW_ON_ERROR),
+        'session_id' => $targetSessionId,
+    ]);
+    [$duplicateHitStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
+        $cookies,
+        ['token' => $targetList[0]['token']],
+        $csrf,
+        'POST',
+    );
+    assertTrue($duplicateHitStatus === 409, 'Target Rush rejects duplicate hits for a previously accepted target token');
+    $runState['started_at_ms'] = (int) floor(microtime(true) * 1000) - (2 * 1_100) - 1_100 - 301;
+    $runState['hits'][0]['received_at_ms'] = $runState['started_at_ms'] + 100;
+    $targetDb->prepare(
+        'UPDATE vault_cracker_states SET guesses_json = :state WHERE session_id = :session_id',
+    )->execute([
+        'state' => json_encode($runState, JSON_THROW_ON_ERROR),
+        'session_id' => $targetSessionId,
+    ]);
+    [$expiredTargetStatus] = request(
+        $baseUrl,
+        '/api/games/target-rush/sessions/' . $targetSessionId . '/hit',
+        $cookies,
+        ['token' => $targetList[1]['token']],
+        $csrf,
+        'POST',
+    );
+    assertTrue($expiredTargetStatus === 409, 'Target Rush rejects a target hit after the 300ms grace period');
     $targetStartMs = (int) floor(microtime(true) * 1000) - 31_000;
     foreach ($safeIndexes as $index) {
-        $runState['started_at_ms'] = (int) floor(microtime(true) * 1000) - ($index * 800) - 100;
+        if ($index === 0) {
+            continue;
+        }
+        $runState['started_at_ms'] = (int) floor(microtime(true) * 1000) - ($index * 1_100) - 100;
         foreach ($runState['hits'] as &$existingHit) {
-            $existingHit['received_at_ms'] = $runState['started_at_ms'] + ($existingHit['index'] * 800) + 100;
+            $existingHit['received_at_ms'] = $runState['started_at_ms'] + ($existingHit['index'] * 1_100) + 100;
         }
         unset($existingHit);
         $targetDb->prepare(
@@ -2067,7 +2142,7 @@ try {
         )->fetchColumn(), true, 16, JSON_THROW_ON_ERROR);
         $runState['started_at_ms'] = $targetStartMs;
         foreach ($runState['hits'] as &$hit) {
-            $hit['received_at_ms'] = $targetStartMs + ($hit['index'] * 800) + 100;
+            $hit['received_at_ms'] = $targetStartMs + ($hit['index'] * 1_100) + 100;
         }
         unset($hit);
         $targetDb->prepare(

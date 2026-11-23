@@ -11,9 +11,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=Oxanium:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css?v=20261121u3" />
-    <link rel="stylesheet" href="target-rush.css?v=20261123preview" />
+    <link rel="stylesheet" href="target-rush.css?v=20261123feel" />
     <script src="script.js?v=20261121fast" defer></script>
-    <script src="target-rush.js?v=20261123preview" defer></script>
+    <script src="target-rush.js?v=20261123feel" defer></script>
   </head>
   <body>
     <div class="site-shell">
@@ -43,6 +43,19 @@
               <span>Score <strong data-rush-score>0</strong></span>
               <span>Time <strong data-rush-time>00:30</strong></span>
               <span>Combo <strong data-rush-combo>x0</strong></span>
+              <button class="rush-mute" type="button" data-rush-mute aria-pressed="false" aria-label="Mute sound">SOUND ON</button>
+              <div class="rush-goal-progress" data-rush-goal-progress>
+                <span>Win goal <strong data-rush-progress-label>0 / 200</strong></span>
+                <span
+                  class="rush-goal-track"
+                  role="progressbar"
+                  aria-label="Progress toward the 200-point win goal"
+                  aria-valuemin="0"
+                  aria-valuemax="200"
+                  aria-valuenow="0"
+                  data-rush-progress-track
+                ><span class="rush-goal-fill" data-rush-progress-fill></span></span>
+              </div>
             </div>
             <button class="rush-target" type="button" data-rush-target hidden></button>
           </section>

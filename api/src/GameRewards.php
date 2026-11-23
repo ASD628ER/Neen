@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 final class GameRewards
 {
+    private const TARGET_RUSH_TARGET_INTERVAL_MS = 1_100;
+    private const TARGET_RUSH_TARGET_COUNT = 28;
+    private const TARGET_RUSH_NETWORK_GRACE_MS = 300;
+
     public function __construct(private readonly PDO $db)
     {
     }
@@ -211,7 +215,7 @@ final class GameRewards
         if (
             !is_array($targets)
             || !array_is_list($targets)
-            || count($targets) !== 38
+            || count($targets) !== self::TARGET_RUSH_TARGET_COUNT
             || !is_array($run)
             || array_is_list($run)
             || !is_int($run['started_at_ms'] ?? null)
@@ -263,11 +267,11 @@ final class GameRewards
                 || !is_int($hit['received_at_ms'] ?? null)
                 || isset($seenIndexes[$index])
                 || ($previousIndex !== null && $index <= $previousIndex)
-                || $hit['received_at_ms'] < $run['started_at_ms'] + ($index * 800)
-                || $hit['received_at_ms'] >= min(
-                    $run['started_at_ms'] + (($index + 1) * 800),
+                || $hit['received_at_ms'] < $run['started_at_ms'] + ($index * self::TARGET_RUSH_TARGET_INTERVAL_MS)
+                || $hit['received_at_ms'] > min(
+                    $run['started_at_ms'] + (($index + 1) * self::TARGET_RUSH_TARGET_INTERVAL_MS),
                     $run['started_at_ms'] + 30_000,
-                )
+                ) + self::TARGET_RUSH_NETWORK_GRACE_MS
             ) {
                 throw new ApiException('GAME_WIN_NOT_VERIFIED', 'A Target Rush hit is invalid or outside its server time slot.', 409);
             }

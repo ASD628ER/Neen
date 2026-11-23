@@ -5,8 +5,10 @@ final class TargetRush extends ChallengeGame
 {
     private const GAME_SLUG = 'vault_cracker';
     private const ROUND_DURATION_MS = 30_000;
-    private const TARGET_INTERVAL_MS = 800;
-    private const TARGET_COUNT = 38;
+    private const TARGET_INTERVAL_MS = 1_100;
+    private const TARGET_COUNT = 28;
+    private const LOOKAHEAD_TARGET_COUNT = 6;
+    private const NETWORK_GRACE_MS = 300;
     private const SCORE_TO_WIN = 200;
     private const TARGET_TYPES = ['normal', 'gold', 'danger'];
     private const POSITIONS = [
@@ -116,6 +118,31 @@ final class TargetRush extends ChallengeGame
                 $activeTarget = ['index' => $index] + $stored['targets'][$index];
             }
         }
+        $lookaheadTargets = [];
+        $hitIndexes = [];
+        foreach ($stored['state']['hits'] as $hit) {
+            $hitIndexes[$hit['index']] = true;
+        }
+        for ($targetIndex = $index; $targetIndex < min(
+            self::TARGET_COUNT,
+            $index + self::LOOKAHEAD_TARGET_COUNT,
+        ); $targetIndex++) {
+            if (isset($hitIndexes[$targetIndex])) {
+                continue;
+            }
+            $target = $stored['targets'][$targetIndex];
+            $lookaheadTargets[] = [
+                'index' => $targetIndex,
+                'starts_at_ms' => $targetIndex * self::TARGET_INTERVAL_MS,
+                'ends_at_ms' => min(
+                    ($targetIndex + 1) * self::TARGET_INTERVAL_MS,
+                    self::ROUND_DURATION_MS,
+                ),
+                'type' => $target['type'],
+                'position' => $target['position'],
+                'token' => $target['token'],
+            ];
+        }
         $stats = $this->scoreHits($stored['targets'], $stored['state']['hits']);
         return [
             'score' => $stats['score'],
@@ -125,9 +152,11 @@ final class TargetRush extends ChallengeGame
             'round_duration_ms' => self::ROUND_DURATION_MS,
             'time_remaining_ms' => max(0, self::ROUND_DURATION_MS - $elapsed),
             'server_time_ms' => $now,
+            'server_elapsed_ms' => $elapsed,
             'next_target_at_ms' => $stored['state']['started_at_ms']
                 + ($index + 1) * self::TARGET_INTERVAL_MS,
             'active_target' => $activeTarget,
+            'lookahead_targets' => $lookaheadTargets,
         ];
     }
 
@@ -142,16 +171,20 @@ final class TargetRush extends ChallengeGame
             $stored = $this->storedState($sessionId, true);
             $nowMs = $this->nowMilliseconds();
             $elapsed = max(0, $nowMs - $stored['state']['started_at_ms']);
-            if ($elapsed >= self::ROUND_DURATION_MS) {
-                return $this->completeRound($userId, $sessionId, $stored, $nowMs);
+            $index = null;
+            foreach ($stored['targets'] as $targetIndex => $candidate) {
+                if (hash_equals($candidate['token'], $token)) {
+                    $index = $targetIndex;
+                    break;
+                }
             }
-
-            $index = intdiv($elapsed, self::TARGET_INTERVAL_MS);
-            $target = $stored['targets'][$index] ?? null;
-            if (
-                !is_array($target)
-                || !hash_equals($target['token'], $token)
-            ) {
+            if ($index === null) {
+                throw new ApiException('TARGET_NOT_ACTIVE', 'That target is not active now.', 409);
+            }
+            $target = $stored['targets'][$index];
+            $startsAt = $index * self::TARGET_INTERVAL_MS;
+            $endsAt = min(($index + 1) * self::TARGET_INTERVAL_MS, self::ROUND_DURATION_MS);
+            if ($elapsed < $startsAt || $elapsed > $endsAt + self::NETWORK_GRACE_MS) {
                 throw new ApiException('TARGET_NOT_ACTIVE', 'That target is not active now.', 409);
             }
             foreach ($stored['state']['hits'] as $hit) {
@@ -305,10 +338,10 @@ final class TargetRush extends ChallengeGame
                 || isset($seenIndexes[$index])
                 || ($previousIndex !== null && $index <= $previousIndex)
                 || $hit['received_at_ms'] < $state['started_at_ms'] + ($index * self::TARGET_INTERVAL_MS)
-                || $hit['received_at_ms'] >= min(
+                || $hit['received_at_ms'] > min(
                     $state['started_at_ms'] + (($index + 1) * self::TARGET_INTERVAL_MS),
                     $state['started_at_ms'] + self::ROUND_DURATION_MS,
-                )
+                ) + self::NETWORK_GRACE_MS
             ) {
                 throw new ApiException('GAME_STATE_INVALID', 'A Target Rush hit is invalid.', 409);
             }

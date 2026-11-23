@@ -35,7 +35,7 @@
   const GAME_CARDS = [
     { title: "Memory Match", catalog: "games/memory-match", current: "games/memory-match/sessions/current", href: "memory-match.html" },
     { title: "Picture Jigsaw", catalog: "games/picture-jigsaw", current: "games/picture-jigsaw/sessions/current", href: "picture-jigsaw.html" },
-    { title: "Vault Cracker", catalog: "games/vault-cracker", current: "games/vault-cracker/sessions/current", href: "vault-cracker.html" },
+    { title: "Target Rush", catalog: "games/target-rush", current: "games/target-rush/sessions/current", href: "target-rush.html" },
     { title: "Loot Sequence Strike", catalog: "games/loot-sequence", current: "games/loot-sequence/sessions/current", href: "loot-sequence.html" },
   ];
   let csrfToken = "";
