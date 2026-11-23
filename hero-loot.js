@@ -326,11 +326,11 @@
     return program;
   };
 
-  const createBuffer = (gl, data, label) => {
+  const createBuffer = (gl, data, label, usage = gl.STATIC_DRAW) => {
     const buffer = gl.createBuffer();
     if (!buffer) throw new Error(`Could not allocate the ${label} buffer.`);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, data, usage);
     return buffer;
   };
 
@@ -471,6 +471,35 @@
       image.onerror = null;
     }
   };
+  const loadLayeredCoinTexture = async (gl, source) => {
+    const image = await loadSpriteImage(source, "coin");
+    try {
+      const imageWidth = image.naturalWidth || image.width;
+      const imageHeight = image.naturalHeight || image.height;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(imageWidth * 1.5);
+      canvas.height = Math.round(imageHeight * 1.5);
+      const context = canvas.getContext("2d", { alpha: true });
+      if (!context) throw new Error("Could not prepare the layered coin texture.");
+
+      context.globalAlpha = 0.24;
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      context.globalAlpha = 1;
+      const innerWidth = imageWidth * 1.24;
+      const innerHeight = imageHeight * 1.24;
+      context.drawImage(
+        image,
+        (canvas.width - innerWidth) / 2,
+        (canvas.height - innerHeight) / 2,
+        innerWidth,
+        innerHeight,
+      );
+      return createTexture(gl, canvas, "coin");
+    } finally {
+      image.onload = null;
+      image.onerror = null;
+    }
+  };
 
   const createProjection = (fieldOfView, aspect, near, far) => {
     const scale = 1 / Math.tan(fieldOfView / 2);
@@ -547,6 +576,7 @@
   const lootNextElement = document.querySelector("[data-loot-next]");
   const lootMessageElement = document.querySelector("[data-loot-message]");
   const lootCoinCount = 20;
+  const collectionEffectVertices = new Float32Array(lootCoinCount * 12 * 7);
   const lootCoinValue = 0.01;
   const lootGroupValue = lootCoinCount * lootCoinValue;
   const lootGroupDuration = 60 * 60 * 1000;
@@ -695,12 +725,18 @@
   let visible = false;
   let running = false;
   let frameHandle = 0;
+  let resizeFrame = 0;
   let lastFrameTime = 0;
   let elapsedTime = 0;
   let pointerX = 0;
   let pointerY = 0;
   let targetPointerX = 0;
   let targetPointerY = 0;
+  let pointerPageX = 0;
+  let pointerPageY = 0;
+  let pointerPositionPending = false;
+  let sectionRect = null;
+  let counterPos = { x: 0.9, y: 0.15 };
   const cameraZ = 10;
 
   const screenToWorld = (screenX, screenY, depth) => {
@@ -713,13 +749,15 @@
     };
   };
 
-  const getCounterScreenPosition = () => {
+  const updateCounterPosition = () => {
     const bounds = lootCountElement?.getBoundingClientRect();
-    const canvasBounds = canvas.getBoundingClientRect();
-    if (!bounds || !canvasBounds.width || !canvasBounds.height) return { x: 0.9, y: 0.15 };
-    return {
-      x: (bounds.left + bounds.width / 2 - canvasBounds.left) / canvasBounds.width,
-      y: (bounds.top + bounds.height / 2 - canvasBounds.top) / canvasBounds.height,
+    if (!bounds || !sectionRect?.width || !sectionRect.height) {
+      counterPos = { x: 0.9, y: 0.15 };
+      return;
+    }
+    counterPos = {
+      x: (bounds.left + bounds.width / 2 + window.scrollX - sectionRect.pageLeft) / sectionRect.width,
+      y: (bounds.top + bounds.height / 2 + window.scrollY - sectionRect.pageTop) / sectionRect.height,
     };
   };
 
@@ -737,6 +775,7 @@
     collectedIds.add(coin.id);
     saveCollectedIds();
     syncCollectionUi();
+    updateCounterPosition();
     if (lootMessageElement) {
       lootMessageElement.textContent = collectedIds.size === lootCoinCount
         ? "Preview complete. The next group appears at the next UTC hour. No reward is credited."
@@ -749,10 +788,10 @@
   };
 
   const handleCanvasPointerDown = (event) => {
-    const bounds = canvas.getBoundingClientRect();
-    if (!bounds.width || !bounds.height) return;
-    const pointerX = event.clientX - bounds.left;
-    const pointerY = event.clientY - bounds.top;
+    const bounds = sectionRect;
+    if (!bounds?.width || !bounds.height) return;
+    const pointerX = event.pageX - bounds.pageLeft;
+    const pointerY = event.pageY - bounds.pageTop;
     let nearestCoin = null;
     let nearestDistance = 28;
     for (const coin of coinObjects) {
@@ -846,24 +885,39 @@
   };
 
   const drawCollectionEffects = (time) => {
-    const sparkVertices = [];
-    collectionEffects = collectionEffects.filter((effect) => time - effect.startedAt < 650);
-    for (const effect of collectionEffects) {
-      const age = Math.max(0, (time - effect.startedAt) / 650);
+    let activeEffectCount = 0;
+    let vertexCount = 0;
+    for (let effectIndex = 0; effectIndex < collectionEffects.length; effectIndex += 1) {
+      const effect = collectionEffects[effectIndex];
+      const elapsed = time - effect.startedAt;
+      if (elapsed >= 650) continue;
+      collectionEffects[activeEffectCount] = effect;
+      activeEffectCount += 1;
+      const age = Math.max(0, elapsed / 650);
+      const halfHeight = Math.tan(Math.PI / 7.6) * (cameraZ - effect.z);
+      const halfWidth = halfHeight * (width / height);
       for (let index = 0; index < 12; index += 1) {
         const angle = (index / 12) * Math.PI * 2;
         const distance = 0.018 + age * 0.09;
         const screenX = effect.screenX + Math.cos(angle) * distance;
         const screenY = effect.screenY + Math.sin(angle) * distance;
-        const position = screenToWorld(screenX, screenY, effect.z);
+        const offset = vertexCount * 7;
         const size = (1 - age) * (2.6 + (index % 3) * 0.6);
-        sparkVertices.push(position.x, position.y, effect.z, 1, 0.76, 0.28, size);
+        collectionEffectVertices[offset] = (screenX * 2 - 1) * halfWidth;
+        collectionEffectVertices[offset + 1] = (1 - screenY * 2) * halfHeight;
+        collectionEffectVertices[offset + 2] = effect.z;
+        collectionEffectVertices[offset + 3] = 1;
+        collectionEffectVertices[offset + 4] = 0.76;
+        collectionEffectVertices[offset + 5] = 0.28;
+        collectionEffectVertices[offset + 6] = size;
+        vertexCount += 1;
       }
     }
-    if (!sparkVertices.length) return;
+    collectionEffects.length = activeEffectCount;
+    if (!vertexCount) return;
     gl.bindBuffer(gl.ARRAY_BUFFER, sparkBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(sparkVertices), gl.DYNAMIC_DRAW);
-    drawParticles(time * 0.001, sparkBuffer, sparkVertices.length / 7);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, collectionEffectVertices);
+    drawParticles(time * 0.001, sparkBuffer, vertexCount);
   };
 
   const bindObjectGeometry = (buffer) => {
@@ -887,6 +941,10 @@
     const delta = lastFrameTime ? Math.min((time - lastFrameTime) * 0.001, 0.05) : 0;
     lastFrameTime = time;
     elapsedTime += delta;
+    if (pointerPositionPending && sectionRect?.width && sectionRect.height) {
+      targetPointerX = ((pointerPageX - sectionRect.pageLeft) / sectionRect.width - 0.5) * 2;
+      targetPointerY = ((pointerPageY - sectionRect.pageTop) / sectionRect.height - 0.5) * -2;
+    }
     pointerX += (targetPointerX - pointerX) * 0.035;
     pointerY += (targetPointerY - pointerY) * 0.035;
 
@@ -1035,29 +1093,37 @@
       if (coin.collecting) {
         coin.collectionProgress = Math.min(1, coin.collectionProgress + delta * 2.4);
         const progress = 1 - (1 - coin.collectionProgress) ** 3;
-        const target = getCounterScreenPosition();
-        screenX += (target.x - screenX) * progress;
-        screenY += (target.y - screenY) * progress;
+        screenX += (counterPos.x - screenX) * progress;
+        screenY += (counterPos.y - screenY) * progress;
         scale *= 1 - progress * 0.62;
         opacity *= 1 - progress * 0.55;
         if (coin.collectionProgress >= 1) coin.collecting = false;
       }
 
       const position = screenToWorld(screenX, screenY, coin.z);
-      drawSprite(itemTextures.coin, { ...position, z: coin.z }, coin.rotation, scale * 1.5, opacity * 0.24);
-      drawSprite(itemTextures.coin, { ...position, z: coin.z }, coin.rotation, scale * 1.24, opacity);
+      drawSprite(itemTextures.coin, { ...position, z: coin.z }, coin.rotation, scale * 1.5, opacity);
     }
 
     if (running) frameHandle = window.requestAnimationFrame(render);
   };
 
-  const resize = () => {
-    const bounds = lootSection.getBoundingClientRect();
-    if (!bounds.width || !bounds.height) return;
-    width = bounds.width;
-    height = bounds.height;
+  const resize = (refreshLayout = true) => {
+    if (refreshLayout) {
+      const bounds = lootSection.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) return;
+      sectionRect = {
+        pageLeft: bounds.left + window.scrollX,
+        pageTop: bounds.top + window.scrollY,
+        width: bounds.width,
+        height: bounds.height,
+      };
+      width = bounds.width;
+      height = bounds.height;
+      updateCounterPosition();
+    }
+    if (!width || !height) return;
     const mobile = width < 760;
-    pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1.2 : 1.6);
+    pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.25);
     canvas.width = Math.round(width * pixelRatio);
     canvas.height = Math.round(height * pixelRatio);
     projection = createProjection(Math.PI / 3.8, width / height, 0.1, 50);
@@ -1095,6 +1161,13 @@
       gl.bufferData(gl.ARRAY_BUFFER, particles, gl.STATIC_DRAW);
     }
     if (!running) render(performance.now());
+  };
+  const scheduleResize = () => {
+    if (resizeFrame) return;
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = 0;
+      resize();
+    });
   };
 
   const pause = () => {
@@ -1140,7 +1213,12 @@
     const loadedTextures = Object.fromEntries(await Promise.all(
       Object.entries(spriteSources)
         .filter(([name]) => name !== "stickerSheet" && name !== "snoopStickers")
-        .map(async ([name, source]) => [name, await loadSpriteTexture(gl, source, name)]),
+        .map(async ([name, source]) => [
+          name,
+          name === "coin"
+            ? await loadLayeredCoinTexture(gl, source)
+            : await loadSpriteTexture(gl, source, name),
+        ]),
     ));
     let loadedStickers = {};
     try {
@@ -1221,7 +1299,7 @@
     initializationStage = "particle buffer creation";
     particleBuffer = createBuffer(gl, new Float32Array(0), "particle");
     initializationStage = "collection spark buffer creation";
-    sparkBuffer = createBuffer(gl, new Float32Array(0), "collection spark");
+    sparkBuffer = createBuffer(gl, collectionEffectVertices, "collection spark", gl.DYNAMIC_DRAW);
     gl.clearColor(0, 0, 0, 0);
 
     initializationStage = "initial canvas resize and scene population";
@@ -1259,16 +1337,17 @@
     };
     const handlePointerMove = (event) => {
       if (motionPreference.matches || width < 760) return;
-      const bounds = lootSection.getBoundingClientRect();
-      targetPointerX = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
-      targetPointerY = ((event.clientY - bounds.top) / bounds.height - 0.5) * -2;
+      pointerPageX = event.pageX;
+      pointerPageY = event.pageY;
+      pointerPositionPending = true;
     };
     const resetPointer = () => {
+      pointerPositionPending = false;
       targetPointerX = 0;
       targetPointerY = 0;
     };
     const handleMotionChange = () => {
-      resize();
+      resize(false);
       if (motionPreference.matches) {
         pause();
         render(performance.now());
@@ -1277,7 +1356,7 @@
       }
     };
 
-    window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("resize", scheduleResize, { passive: true });
     document.addEventListener("visibilitychange", handleVisibility);
     lootSection.addEventListener("pointermove", handlePointerMove, { passive: true });
     lootSection.addEventListener("pointerleave", resetPointer, { passive: true });
@@ -1287,7 +1366,9 @@
       () => {
         pause();
         observer?.disconnect();
-        window.removeEventListener("resize", resize);
+        window.removeEventListener("resize", scheduleResize);
+        window.cancelAnimationFrame(resizeFrame);
+        resizeFrame = 0;
         document.removeEventListener("visibilitychange", handleVisibility);
         window.clearTimeout(batchTimer);
         lootSection.removeEventListener("pointermove", handlePointerMove);
