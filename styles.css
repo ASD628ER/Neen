@@ -10037,7 +10037,7 @@ html[dir="rtl"] .neen-news-submit-toggle {
 
 @media (prefers-reduced-motion: reduce) {
   .neen-news-ticker-track {
-    animation-duration: 1ms;
-    animation-iteration-count: 1;
+    animation-duration: var(--neen-news-speed, 55s) !important;
+    animation-iteration-count: infinite !important;
   }
 }
