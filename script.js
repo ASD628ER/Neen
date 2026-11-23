@@ -900,7 +900,7 @@ let languageToggle = null;
 
 const SITE_MEDIA_SELECTORS = {
   media_home_hero: [".home-hero .hero-art img"],
-  media_about_portrait: [".about-photo img", ".home-about-portrait img"],
+  media_about_portrait: [".about-page-art img", ".home-about-portrait img"],
   media_coin_icon: ['img[src*="gold-coin.webp"]'],
   media_events_banner_1: [".events-hero-media img:first-child"],
   media_events_banner_2: [".events-hero-media img:last-child"],
